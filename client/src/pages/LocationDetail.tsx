@@ -4,7 +4,7 @@
 import PortalLayout from "@/components/PortalLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { getLocationById } from "@/data/franchises";
-import { CheckSquare, ExternalLink, Square } from "lucide-react";
+import { BarChart2, CheckSquare, ExternalLink, FileText, MapPin, Square, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 
@@ -144,33 +144,98 @@ export default function LocationDetail() {
             >
               Strategy Dashboard
             </h2>
-            {loc.driveUrl && (
-              <a
-                href={loc.driveUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs flex items-center gap-1 font-semibold transition-opacity hover:opacity-70"
-                style={{ color: "oklch(0.32 0.09 145)", fontFamily: "Inter, sans-serif" }}
-              >
-                Open in Google Drive <ExternalLink size={11} />
-              </a>
-            )}
           </div>
 
           {loc.status === "active" && loc.driveUrl ? (
             <div
               className="rounded-sm border overflow-hidden"
-              style={{ borderColor: "oklch(0.88 0.012 80)", height: "600px" }}
+              style={{ borderColor: "oklch(0.82 0.06 145)", background: "oklch(0.97 0.012 80)" }}
             >
-              {/* Google Drive preview embed */}
-              <iframe
-                src={loc.driveUrl.replace("/view", "/preview")}
-                width="100%"
-                height="100%"
-                allow="autoplay"
-                title={`${loc.name} Strategy Dashboard`}
-                style={{ border: "none" }}
-              />
+              {/* Dashboard preview card — Google Drive blocks iframe embedding, so we show a rich card instead */}
+              <div
+                className="px-6 py-5 flex items-center justify-between"
+                style={{ background: "oklch(0.22 0.06 145)", borderBottom: "1px solid oklch(0.30 0.08 145)" }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0"
+                    style={{ background: "oklch(0.32 0.09 145)" }}
+                  >
+                    <BarChart2 size={16} color="white" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold" style={{ color: "white", fontFamily: "Inter, sans-serif" }}>
+                      {loc.name} — Full Strategy Dashboard
+                    </div>
+                    <div className="text-xs" style={{ color: "oklch(0.75 0.06 145)", fontFamily: "Inter, sans-serif" }}>
+                      Hosted in Google Drive · Updated {loc.lastUpdated ? new Date(loc.lastUpdated).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "—"}
+                    </div>
+                  </div>
+                </div>
+                <a
+                  href={loc.driveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-sm text-xs font-bold transition-opacity hover:opacity-80"
+                  style={{ background: "oklch(0.55 0.14 145)", color: "white", fontFamily: "Inter, sans-serif", textDecoration: "none" }}
+                >
+                  Open Dashboard <ExternalLink size={12} />
+                </a>
+              </div>
+
+              {/* Dashboard summary stats */}
+              <div className="grid grid-cols-2 gap-0" style={{ borderBottom: "1px solid oklch(0.88 0.012 80)" }}>
+                <div className="p-5" style={{ borderRight: "1px solid oklch(0.88 0.012 80)" }}>
+                  <div className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}>What's Inside</div>
+                  <div className="space-y-2">
+                    {[
+                      { icon: <TrendingUp size={13} />, label: "12-month revenue & job trends by species" },
+                      { icon: <MapPin size={13} />, label: "Top suburbs ranked by revenue and job count" },
+                      { icon: <BarChart2 size={13} />, label: "Google Search Console — clicks, impressions, positions" },
+                      { icon: <FileText size={13} />, label: "Content gap analysis — suburbs with jobs but no page" },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="mt-0.5 flex-shrink-0" style={{ color: "oklch(0.42 0.09 145)" }}>{item.icon}</span>
+                        <span className="text-xs" style={{ color: "oklch(0.35 0.015 65)", fontFamily: "Inter, sans-serif", lineHeight: 1.5 }}>{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-5">
+                  <div className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}>Quick Stats</div>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-xs" style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}>Top Species</div>
+                      <div className="text-sm font-semibold" style={{ color: "oklch(0.18 0.015 65)", fontFamily: "Inter, sans-serif" }}>{loc.kpis.topSpecies}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs" style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}>Sessions Trend</div>
+                      <div className="text-sm font-semibold" style={{ color: loc.kpis.sessionsTrend === "up" ? "oklch(0.42 0.09 145)" : loc.kpis.sessionsTrend === "down" ? "oklch(0.45 0.18 27)" : "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}>
+                        {loc.kpis.sessionsTrend === "up" ? "↑ Growing" : loc.kpis.sessionsTrend === "down" ? "↓ Declining" : "→ Stable"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs" style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}>Dashboard Format</div>
+                      <div className="text-sm font-semibold" style={{ color: "oklch(0.18 0.015 65)", fontFamily: "Inter, sans-serif" }}>Interactive HTML</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-5 py-3 flex items-center justify-between" style={{ background: "oklch(0.97 0.012 80)" }}>
+                <span className="text-xs" style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}>
+                  Click "Open Dashboard" to view the full interactive report in Google Drive
+                </span>
+                <a
+                  href={loc.driveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs flex items-center gap-1 font-semibold transition-opacity hover:opacity-70"
+                  style={{ color: "oklch(0.32 0.09 145)", fontFamily: "Inter, sans-serif", textDecoration: "none" }}
+                >
+                  Open in Google Drive <ExternalLink size={11} />
+                </a>
+              </div>
             </div>
           ) : (
             <div
