@@ -4,7 +4,7 @@
 import PortalLayout from "@/components/PortalLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { FRANCHISE_LOCATIONS, type FranchiseLocation } from "@/data/franchises";
-import { ArrowUpRight, Clock, ExternalLink, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowUpRight, Clock, TrendingDown, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
 
 function StatusBadge({ status }: { status: FranchiseLocation["status"] }) {
@@ -135,16 +135,14 @@ function LocationCard({ loc }: { loc: FranchiseLocation }) {
           View Details <ArrowUpRight size={12} />
         </Link>
 
-        {isReady && loc.driveUrl && (
-          <a
-            href={loc.driveUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+        {isReady && (
+          <Link
+            href={`/report/${loc.id}`}
             className="text-xs flex items-center gap-1 transition-opacity hover:opacity-70"
             style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}
           >
-            Full Report <ExternalLink size={11} />
-          </a>
+            Full Report <ArrowUpRight size={11} />
+          </Link>
         )}
       </div>
     </div>
