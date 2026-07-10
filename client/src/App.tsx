@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Dashboard from "./pages/Dashboard";
 import PrintReport from "./pages/PrintReport";
+import TriggerReport from "./pages/TriggerReport";
 import Home from "./pages/Home";
 import LocationDetail from "./pages/LocationDetail";
 import Login from "./pages/Login";
@@ -56,6 +57,9 @@ function Router() {
       </Route>
       <Route path="/report/:id">
         <ProtectedRoute component={PrintReport} />
+      </Route>
+      <Route path="/trigger/:id">
+        <ProtectedRoute component={TriggerReport} />
       </Route>
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
