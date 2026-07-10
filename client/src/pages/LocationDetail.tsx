@@ -226,15 +226,15 @@ export default function LocationDetail() {
                   Full interactive charts — no external login required
                 </span>
                 <div className="flex items-center gap-3 flex-wrap">
-                  {loc.reportPdfUrl && (
+                  {loc.fullReportUrl && (
                     <a
-                      href={loc.reportPdfUrl}
+                      href={loc.fullReportUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs flex items-center gap-1 font-semibold transition-opacity hover:opacity-70"
                       style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif", textDecoration: "none" }}
                     >
-                      <FileText size={12} /> Full Report PDF
+                      <FileText size={12} /> Full Report
                     </a>
                   )}
                   {loc.triggerPdfUrl && (
