@@ -221,17 +221,41 @@ export default function LocationDetail() {
                 </div>
               </div>
 
-              <div className="px-5 py-3 flex items-center justify-between" style={{ background: "oklch(0.97 0.012 80)" }}>
+              <div className="px-5 py-3 flex items-center justify-between flex-wrap gap-3" style={{ background: "oklch(0.97 0.012 80)" }}>
                 <span className="text-xs" style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}>
                   Full interactive charts — no external login required
                 </span>
-                <Link
-                  href={`/dashboard/${loc.id}`}
-                  className="text-xs flex items-center gap-1 font-semibold transition-opacity hover:opacity-70"
-                  style={{ color: "oklch(0.32 0.09 145)", fontFamily: "Inter, sans-serif", textDecoration: "none" }}
-                >
-                  View Full Dashboard →
-                </Link>
+                <div className="flex items-center gap-3 flex-wrap">
+                  {loc.reportPdfUrl && (
+                    <a
+                      href={loc.reportPdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs flex items-center gap-1 font-semibold transition-opacity hover:opacity-70"
+                      style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif", textDecoration: "none" }}
+                    >
+                      <FileText size={12} /> Full Report PDF
+                    </a>
+                  )}
+                  {loc.triggerPdfUrl && (
+                    <a
+                      href={loc.triggerPdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs flex items-center gap-1 font-semibold transition-opacity hover:opacity-70"
+                      style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif", textDecoration: "none" }}
+                    >
+                      <ExternalLink size={12} /> Monthly Trigger Report
+                    </a>
+                  )}
+                  <Link
+                    href={`/dashboard/${loc.id}`}
+                    className="text-xs flex items-center gap-1 font-semibold transition-opacity hover:opacity-70"
+                    style={{ color: "oklch(0.32 0.09 145)", fontFamily: "Inter, sans-serif", textDecoration: "none" }}
+                  >
+                    View Full Dashboard →
+                  </Link>
+                </div>
               </div>
             </div>
           ) : (
