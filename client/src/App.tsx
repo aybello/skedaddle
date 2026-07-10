@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ErrorBoundary from "./components/ErrorBoundary";
+import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import LocationDetail from "./pages/LocationDetail";
 import Login from "./pages/Login";
@@ -48,6 +49,9 @@ function Router() {
       </Route>
       <Route path="/location/:id">
         <ProtectedRoute component={LocationDetail} />
+      </Route>
+      <Route path="/dashboard/:id">
+        <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

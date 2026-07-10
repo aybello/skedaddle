@@ -5,6 +5,7 @@ import PortalLayout from "@/components/PortalLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { getLocationById } from "@/data/franchises";
 import { BarChart2, CheckSquare, ExternalLink, FileText, MapPin, Square, TrendingUp } from "lucide-react";
+import { Link } from "wouter";
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 
@@ -146,12 +147,12 @@ export default function LocationDetail() {
             </h2>
           </div>
 
-          {loc.status === "active" && loc.driveUrl ? (
+          {loc.status === "active" ? (
             <div
               className="rounded-sm border overflow-hidden"
               style={{ borderColor: "oklch(0.82 0.06 145)", background: "oklch(0.97 0.012 80)" }}
             >
-              {/* Dashboard preview card — Google Drive blocks iframe embedding, so we show a rich card instead */}
+              {/* Dashboard card — links to in-portal dashboard page */}
               <div
                 className="px-6 py-5 flex items-center justify-between"
                 style={{ background: "oklch(0.22 0.06 145)", borderBottom: "1px solid oklch(0.30 0.08 145)" }}
@@ -168,31 +169,29 @@ export default function LocationDetail() {
                       {loc.name} — Full Strategy Dashboard
                     </div>
                     <div className="text-xs" style={{ color: "oklch(0.75 0.06 145)", fontFamily: "Inter, sans-serif" }}>
-                      Hosted in Google Drive · Updated {loc.lastUpdated ? new Date(loc.lastUpdated).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "—"}
+                      Revenue · Species · Suburbs · GSC · GBP · Updated July 2026
                     </div>
                   </div>
                 </div>
-                <a
-                  href={loc.driveUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href={`/dashboard/${loc.id}`}
                   className="flex items-center gap-2 px-4 py-2 rounded-sm text-xs font-bold transition-opacity hover:opacity-80"
                   style={{ background: "oklch(0.55 0.14 145)", color: "white", fontFamily: "Inter, sans-serif", textDecoration: "none" }}
                 >
-                  Open Dashboard <ExternalLink size={12} />
-                </a>
+                  Open Dashboard
+                </Link>
               </div>
 
-              {/* Dashboard summary stats */}
+              {/* Dashboard summary */}
               <div className="grid grid-cols-2 gap-0" style={{ borderBottom: "1px solid oklch(0.88 0.012 80)" }}>
                 <div className="p-5" style={{ borderRight: "1px solid oklch(0.88 0.012 80)" }}>
                   <div className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}>What's Inside</div>
                   <div className="space-y-2">
                     {[
-                      { icon: <TrendingUp size={13} />, label: "12-month revenue & job trends by species" },
-                      { icon: <MapPin size={13} />, label: "Top suburbs ranked by revenue and job count" },
-                      { icon: <BarChart2 size={13} />, label: "Google Search Console — clicks, impressions, positions" },
-                      { icon: <FileText size={13} />, label: "Content gap analysis — suburbs with jobs but no page" },
+                      { icon: <TrendingUp size={13} />, label: "Revenue & jobs by species — ranked" },
+                      { icon: <MapPin size={13} />, label: "Top 20 suburbs by revenue and job count" },
+                      { icon: <BarChart2 size={13} />, label: "Google Search Console — clicks, impressions, position" },
+                      { icon: <FileText size={13} />, label: "GBP performance — searches, calls, website clicks" },
                     ].map((item, i) => (
                       <div key={i} className="flex items-start gap-2">
                         <span className="mt-0.5 flex-shrink-0" style={{ color: "oklch(0.42 0.09 145)" }}>{item.icon}</span>
@@ -215,8 +214,8 @@ export default function LocationDetail() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs" style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}>Dashboard Format</div>
-                      <div className="text-sm font-semibold" style={{ color: "oklch(0.18 0.015 65)", fontFamily: "Inter, sans-serif" }}>Interactive HTML</div>
+                      <div className="text-xs" style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}>Dashboard Type</div>
+                      <div className="text-sm font-semibold" style={{ color: "oklch(0.18 0.015 65)", fontFamily: "Inter, sans-serif" }}>Live — built into portal</div>
                     </div>
                   </div>
                 </div>
@@ -224,17 +223,15 @@ export default function LocationDetail() {
 
               <div className="px-5 py-3 flex items-center justify-between" style={{ background: "oklch(0.97 0.012 80)" }}>
                 <span className="text-xs" style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}>
-                  Click "Open Dashboard" to view the full interactive report in Google Drive
+                  Full interactive charts — no external login required
                 </span>
-                <a
-                  href={loc.driveUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href={`/dashboard/${loc.id}`}
                   className="text-xs flex items-center gap-1 font-semibold transition-opacity hover:opacity-70"
                   style={{ color: "oklch(0.32 0.09 145)", fontFamily: "Inter, sans-serif", textDecoration: "none" }}
                 >
-                  Open in Google Drive <ExternalLink size={11} />
-                </a>
+                  View Full Dashboard →
+                </Link>
               </div>
             </div>
           ) : (
