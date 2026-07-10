@@ -1,39 +1,70 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import LocationDetail from "./pages/LocationDetail";
+import Login from "./pages/Login";
+import Network from "./pages/Network";
+import NotFound from "./pages/NotFound";
+import Resources from "./pages/Resources";
+import Tools from "./pages/Tools";
+import { Redirect, Route, Switch } from "wouter";
 
+// Protected route — redirects to /login if not authenticated
+function ProtectedRoute({
+  component: Component,
+  adminOnly = false,
+}: {
+  component: React.ComponentType;
+  adminOnly?: boolean;
+}) {
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Redirect to="/login" />;
+  if (adminOnly && user?.role !== "admin") return <Redirect to="/" />;
+  return <Component />;
+}
 
 function Router() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
+      <Route path="/login">
+        {isAuthenticated ? <Redirect to="/" /> : <Login />}
+      </Route>
+      <Route path="/">
+        <ProtectedRoute component={Home} />
+      </Route>
+      <Route path="/network">
+        <ProtectedRoute component={Network} />
+      </Route>
+      <Route path="/tools">
+        <ProtectedRoute component={Tools} />
+      </Route>
+      <Route path="/resources">
+        <ProtectedRoute component={Resources} adminOnly />
+      </Route>
+      <Route path="/location/:id">
+        <ProtectedRoute component={LocationDetail} />
+      </Route>
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+      <ThemeProvider defaultTheme="light">
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
