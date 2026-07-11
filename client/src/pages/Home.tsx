@@ -64,7 +64,40 @@ function LocationCard({ loc }: { loc: FranchiseLocation }) {
 
         {/* KPI row */}
         {isReady ? (
-          <div className="grid grid-cols-3 gap-3 mt-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-4">
+            {/* Revenue */}
+            <div>
+              <div
+                className="text-xs uppercase tracking-wider mb-0.5"
+                style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}
+              >
+                T12 Revenue
+              </div>
+              <div
+                className="text-sm font-bold"
+                style={{ color: "oklch(0.32 0.09 145)", fontFamily: "Inter, sans-serif" }}
+              >
+                {loc.kpis.totalRevenue > 0
+                  ? `$${(loc.kpis.totalRevenue / 1000).toFixed(0)}K`
+                  : "—"}
+              </div>
+            </div>
+            {/* Jobs */}
+            <div>
+              <div
+                className="text-xs uppercase tracking-wider mb-0.5"
+                style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}
+              >
+                Total Jobs
+              </div>
+              <div
+                className="text-sm font-bold"
+                style={{ color: "oklch(0.18 0.015 65)", fontFamily: "Inter, sans-serif" }}
+              >
+                {loc.kpis.totalJobs > 0 ? loc.kpis.totalJobs : "—"}
+              </div>
+            </div>
+            {/* Top Species */}
             <div>
               <div
                 className="text-xs uppercase tracking-wider mb-0.5"
@@ -79,6 +112,7 @@ function LocationCard({ loc }: { loc: FranchiseLocation }) {
                 {loc.kpis.topSpecies}
               </div>
             </div>
+            {/* Sessions */}
             <div>
               <div
                 className="text-xs uppercase tracking-wider mb-0.5"
@@ -94,20 +128,6 @@ function LocationCard({ loc }: { loc: FranchiseLocation }) {
                 >
                   {loc.kpis.sessionsTrend === "up" ? "Growing" : loc.kpis.sessionsTrend === "down" ? "Declining" : "Stable"}
                 </span>
-              </div>
-            </div>
-            <div>
-              <div
-                className="text-xs uppercase tracking-wider mb-0.5"
-                style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}
-              >
-                Updated
-              </div>
-              <div
-                className="text-sm font-semibold"
-                style={{ color: "oklch(0.18 0.015 65)", fontFamily: "Inter, sans-serif" }}
-              >
-                {loc.lastUpdated ? new Date(loc.lastUpdated).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
               </div>
             </div>
           </div>

@@ -1,32 +1,29 @@
 // Auto-generated dashboard data — do not edit manually
-// Regenerate: python3 /tmp/parse_dashboard_v3.py
-
+// Source of truth: species_milwaukee.json + species_madison.json (filtered: $200-$10k, excl pest/commercial)
+// Suburb data: city_milwaukee.json + city_madison.json (Jul 2025 - Jun 2026)
+// GSC/GBP: preserved from previous generation
 export interface SpeciesData {
   species: string;
   total_revenue: number;
   total_jobs: number;
 }
-
 export interface SuburbData {
   suburb: string;
   revenue: number;
   jobs: number;
 }
-
 export interface GscMonthly {
   month: string;
   clicks: number;
   impressions: number;
   avg_position: number;
 }
-
 export interface GbpMonthly {
   month: string;
   searches: number;
   calls: number;
   website_clicks: number;
 }
-
 export interface LocationDashboard {
   id: string;
   name: string;
@@ -47,171 +44,47 @@ export interface LocationDashboard {
     total_clicks: number;
   };
 }
-
 export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "milwaukee": {
     "id": "milwaukee",
     "name": "Milwaukee",
-    "total_revenue": 990509.15,
-    "total_jobs": 308,
+    "total_revenue": 967849.1499999999,
+    "total_jobs": 420,
     "species": [
-      {
-        "species": "Squirrels",
-        "total_revenue": 304036.41,
-        "total_jobs": 0
-      },
-      {
-        "species": "Mice",
-        "total_revenue": 262277.55,
-        "total_jobs": 87
-      },
-      {
-        "species": "Bats",
-        "total_revenue": 183084.45,
-        "total_jobs": 75
-      },
-      {
-        "species": "Raccoons",
-        "total_revenue": 163317.39,
-        "total_jobs": 75
-      },
-      {
-        "species": "Birds",
-        "total_revenue": 37072.75,
-        "total_jobs": 42
-      },
-      {
-        "species": "Red Squirrels",
-        "total_revenue": 16905.0,
-        "total_jobs": 7
-      },
-      {
-        "species": "Opossums",
-        "total_revenue": 5800.0,
-        "total_jobs": 7
-      },
-      {
-        "species": "Rats",
-        "total_revenue": 5630.85,
-        "total_jobs": 2
-      },
-      {
-        "species": "Skunks",
-        "total_revenue": 5220.0,
-        "total_jobs": 3
-      },
-      {
-        "species": "Flying Squirrels",
-        "total_revenue": 4090.75,
-        "total_jobs": 7
-      },
-      {
-        "species": "Chipmunks",
-        "total_revenue": 3074.0,
-        "total_jobs": 3
-      }
+      {"species": "Squirrels", "total_revenue": 303691.41, "total_jobs": 149},
+      {"species": "Mice", "total_revenue": 262277.55, "total_jobs": 79},
+      {"species": "Bats", "total_revenue": 181324.45, "total_jobs": 61},
+      {"species": "Raccoons", "total_revenue": 139377.39, "total_jobs": 68},
+      {"species": "Birds", "total_revenue": 37072.75, "total_jobs": 39},
+      {"species": "Red Squirrels", "total_revenue": 16905.0, "total_jobs": 7},
+      {"species": "Rats", "total_revenue": 5630.85, "total_jobs": 2},
+      {"species": "Opossums", "total_revenue": 5605.0, "total_jobs": 6},
+      {"species": "Skunks", "total_revenue": 4830.0, "total_jobs": 1},
+      {"species": "Flying Squirrels", "total_revenue": 4090.75, "total_jobs": 3},
+      {"species": "Prevention only", "total_revenue": 3970.0, "total_jobs": 2},
+      {"species": "Chipmunks", "total_revenue": 3074.0, "total_jobs": 3}
     ],
     "suburbs": [
-      {
-        "suburb": "Milwaukee",
-        "revenue": 320099.96,
-        "jobs": 77
-      },
-      {
-        "suburb": "Brookfield",
-        "revenue": 50259.4,
-        "jobs": 15
-      },
-      {
-        "suburb": "Waukesha",
-        "revenue": 49832.95,
-        "jobs": 20
-      },
-      {
-        "suburb": "New Berlin",
-        "revenue": 47770.9,
-        "jobs": 15
-      },
-      {
-        "suburb": "Hartland",
-        "revenue": 42675.5,
-        "jobs": 11
-      },
-      {
-        "suburb": "Wauwatosa",
-        "revenue": 37351.5,
-        "jobs": 12
-      },
-      {
-        "suburb": "Greenfield",
-        "revenue": 29610.5,
-        "jobs": 10
-      },
-      {
-        "suburb": "Pewaukee",
-        "revenue": 27876.5,
-        "jobs": 10
-      },
-      {
-        "suburb": "West Allis",
-        "revenue": 27398.35,
-        "jobs": 12
-      },
-      {
-        "suburb": "Franklin",
-        "revenue": 22436.39,
-        "jobs": 8
-      },
-      {
-        "suburb": "Delafield",
-        "revenue": 21464.75,
-        "jobs": 3
-      },
-      {
-        "suburb": "Oconomowoc",
-        "revenue": 20763.75,
-        "jobs": 7
-      },
-      {
-        "suburb": "Muskego",
-        "revenue": 18540.05,
-        "jobs": 3
-      },
-      {
-        "suburb": "Glendale",
-        "revenue": 18464.5,
-        "jobs": 7
-      },
-      {
-        "suburb": "Mequon",
-        "revenue": 16895.25,
-        "jobs": 6
-      },
-      {
-        "suburb": "Shorewood",
-        "revenue": 15708.5,
-        "jobs": 5
-      },
-      {
-        "suburb": "Fox Point",
-        "revenue": 15317.15,
-        "jobs": 5
-      },
-      {
-        "suburb": "Cudahy",
-        "revenue": 13757.25,
-        "jobs": 5
-      },
-      {
-        "suburb": "South Milwaukee",
-        "revenue": 12984.0,
-        "jobs": 10
-      },
-      {
-        "suburb": "Dousman",
-        "revenue": 12012.0,
-        "jobs": 2
-      }
+      {"suburb": "Milwaukee", "revenue": 320099.96, "jobs": 161},
+      {"suburb": "Waukesha", "revenue": 53882.95, "jobs": 28},
+      {"suburb": "Brookfield", "revenue": 50259.4, "jobs": 23},
+      {"suburb": "New Berlin", "revenue": 47770.9, "jobs": 23},
+      {"suburb": "Hartland", "revenue": 42675.5, "jobs": 15},
+      {"suburb": "Wauwatosa", "revenue": 37351.5, "jobs": 19},
+      {"suburb": "Greenfield", "revenue": 29610.5, "jobs": 10},
+      {"suburb": "Pewaukee", "revenue": 27876.5, "jobs": 11},
+      {"suburb": "West Allis", "revenue": 27398.35, "jobs": 18},
+      {"suburb": "Franklin", "revenue": 22436.39, "jobs": 9},
+      {"suburb": "Delafield", "revenue": 21464.75, "jobs": 5},
+      {"suburb": "Oconomowoc", "revenue": 20763.75, "jobs": 11},
+      {"suburb": "Muskego", "revenue": 18540.05, "jobs": 8},
+      {"suburb": "Glendale", "revenue": 18464.5, "jobs": 11},
+      {"suburb": "Mequon", "revenue": 16895.25, "jobs": 9},
+      {"suburb": "Shorewood", "revenue": 15708.5, "jobs": 5},
+      {"suburb": "Fox Point", "revenue": 15317.15, "jobs": 8},
+      {"suburb": "Cudahy", "revenue": 13757.25, "jobs": 8},
+      {"suburb": "South Milwaukee", "revenue": 12984.0, "jobs": 10},
+      {"suburb": "Dousman", "revenue": 12012.0, "jobs": 3}
     ],
     "gsc": {
       "monthly": [
@@ -399,166 +272,43 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "madison": {
     "id": "madison",
     "name": "Madison",
-    "total_revenue": 859473.65,
-    "total_jobs": 295,
+    "total_revenue": 828349.6499999999,
+    "total_jobs": 283,
     "species": [
-      {
-        "species": "Mice",
-        "total_revenue": 477647.8,
-        "total_jobs": 118
-      },
-      {
-        "species": "Bats",
-        "total_revenue": 194272.05,
-        "total_jobs": 64
-      },
-      {
-        "species": "Raccoons",
-        "total_revenue": 105662.6,
-        "total_jobs": 49
-      },
-      {
-        "species": "Birds",
-        "total_revenue": 43040.0,
-        "total_jobs": 50
-      },
-      {
-        "species": "Chipmunks",
-        "total_revenue": 15019.5,
-        "total_jobs": 5
-      },
-      {
-        "species": "Rats",
-        "total_revenue": 7523.5,
-        "total_jobs": 2
-      },
-      {
-        "species": "Flying Squirrels",
-        "total_revenue": 6322.25,
-        "total_jobs": 3
-      },
-      {
-        "species": "Clean Up",
-        "total_revenue": 4565.0,
-        "total_jobs": 2
-      },
-      {
-        "species": "Skunks",
-        "total_revenue": 2050.0,
-        "total_jobs": 0
-      },
-      {
-        "species": "Opossums",
-        "total_revenue": 1850.0,
-        "total_jobs": 1
-      },
-      {
-        "species": "Red Squirrels",
-        "total_revenue": 1520.95,
-        "total_jobs": 1
-      }
+      {"species": "Mice", "total_revenue": 442527.8, "total_jobs": 106},
+      {"species": "Bats", "total_revenue": 194077.05, "total_jobs": 62},
+      {"species": "Raccoons", "total_revenue": 105467.6, "total_jobs": 47},
+      {"species": "Birds", "total_revenue": 43040.0, "total_jobs": 49},
+      {"species": "Chipmunks", "total_revenue": 15019.5, "total_jobs": 5},
+      {"species": "Rats", "total_revenue": 7523.5, "total_jobs": 2},
+      {"species": "Flying Squirrels", "total_revenue": 6322.25, "total_jobs": 3},
+      {"species": "Clean Up", "total_revenue": 4565.0, "total_jobs": 2},
+      {"species": "Prevention only", "total_revenue": 4386.0, "total_jobs": 4},
+      {"species": "Skunks", "total_revenue": 2050.0, "total_jobs": 1},
+      {"species": "Opossums", "total_revenue": 1850.0, "total_jobs": 1},
+      {"species": "Red Squirrels", "total_revenue": 1520.95, "total_jobs": 1}
     ],
     "suburbs": [
-      {
-        "suburb": "Madison",
-        "revenue": 470308.85,
-        "jobs": 158
-      },
-      {
-        "suburb": "Middleton",
-        "revenue": 79775.05,
-        "jobs": 26
-      },
-      {
-        "suburb": "Verona",
-        "revenue": 50296.3,
-        "jobs": 21
-      },
-      {
-        "suburb": "Fitchburg",
-        "revenue": 39885.0,
-        "jobs": 16
-      },
-      {
-        "suburb": "Waunakee",
-        "revenue": 27953.25,
-        "jobs": 9
-      },
-      {
-        "suburb": "Oregon",
-        "revenue": 25196.0,
-        "jobs": 11
-      },
-      {
-        "suburb": "Mount Horeb",
-        "revenue": 23073.75,
-        "jobs": 4
-      },
-      {
-        "suburb": "Mazomanie",
-        "revenue": 19989.25,
-        "jobs": 4
-      },
-      {
-        "suburb": "Monona",
-        "revenue": 18817.0,
-        "jobs": 7
-      },
-      {
-        "suburb": "Sun Prairie",
-        "revenue": 18037.0,
-        "jobs": 6
-      },
-      {
-        "suburb": "Stoughton",
-        "revenue": 16759.0,
-        "jobs": 6
-      },
-      {
-        "suburb": "McFarland",
-        "revenue": 12151.0,
-        "jobs": 4
-      },
-      {
-        "suburb": "Columbus",
-        "revenue": 10985.0,
-        "jobs": 3
-      },
-      {
-        "suburb": "Belleville",
-        "revenue": 9791.0,
-        "jobs": 3
-      },
-      {
-        "suburb": "New Glarus",
-        "revenue": 5444.75,
-        "jobs": 2
-      },
-      {
-        "suburb": "Cottage Grove",
-        "revenue": 5401.7,
-        "jobs": 1
-      },
-      {
-        "suburb": "DeForest",
-        "revenue": 5061.0,
-        "jobs": 8
-      },
-      {
-        "suburb": "Cross Plains",
-        "revenue": 4670.95,
-        "jobs": 2
-      },
-      {
-        "suburb": "Fall River",
-        "revenue": 3831.55,
-        "jobs": 1
-      },
-      {
-        "suburb": "Dane",
-        "revenue": 3255.0,
-        "jobs": 1
-      }
+      {"suburb": "Madison", "revenue": 538355.6, "jobs": 187},
+      {"suburb": "Middleton", "revenue": 86108.05, "jobs": 29},
+      {"suburb": "Verona", "revenue": 58137.05, "jobs": 24},
+      {"suburb": "Fitchburg", "revenue": 45340.0, "jobs": 19},
+      {"suburb": "Waunakee", "revenue": 35568.25, "jobs": 12},
+      {"suburb": "Oregon", "revenue": 31281.0, "jobs": 13},
+      {"suburb": "Mount Horeb", "revenue": 27613.75, "jobs": 5},
+      {"suburb": "Sun Prairie", "revenue": 24137.0, "jobs": 10},
+      {"suburb": "Mazomanie", "revenue": 19989.25, "jobs": 4},
+      {"suburb": "Monona", "revenue": 18817.0, "jobs": 7},
+      {"suburb": "Stoughton", "revenue": 17054.0, "jobs": 7},
+      {"suburb": "McFarland", "revenue": 16761.0, "jobs": 6},
+      {"suburb": "Columbus", "revenue": 10985.0, "jobs": 3},
+      {"suburb": "Belleville", "revenue": 9791.0, "jobs": 3},
+      {"suburb": "DeForest", "revenue": 8366.0, "jobs": 9},
+      {"suburb": "New Glarus", "revenue": 5444.75, "jobs": 2},
+      {"suburb": "Cottage Grove", "revenue": 5401.7, "jobs": 1},
+      {"suburb": "Cross Plains", "revenue": 4670.95, "jobs": 2},
+      {"suburb": "Fall River", "revenue": 3831.55, "jobs": 1},
+      {"suburb": "Evansville", "revenue": 3564.0, "jobs": 2}
     ],
     "gsc": {
       "monthly": [

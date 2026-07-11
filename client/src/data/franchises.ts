@@ -19,6 +19,7 @@ export interface FranchiseLocation {
   kpis: {
     totalRevenue: number;
     totalJobs: number;
+    avgJobValue?: number;
     topSpecies: string;
     gbpRating: number | null;
     sessionsTrend: "up" | "down" | "flat";
@@ -46,6 +47,7 @@ export const FRANCHISE_LOCATIONS: FranchiseLocation[] = [
     kpis: {
       totalRevenue: 967849,
       totalJobs: 420,
+      avgJobValue: 2304,
       topSpecies: "Squirrels",
       gbpRating: null,
       sessionsTrend: "up",
@@ -69,8 +71,9 @@ export const FRANCHISE_LOCATIONS: FranchiseLocation[] = [
     status: "active",
     lastUpdated: "2026-07-10",
     kpis: {
-      totalRevenue: 986110,
-      totalJobs: 352,
+      totalRevenue: 828350,
+      totalJobs: 283,
+      avgJobValue: 2927,
       topSpecies: "Mice",
       gbpRating: null,
       sessionsTrend: "up",
