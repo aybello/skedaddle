@@ -64,7 +64,7 @@ export const FRANCHISE_LOCATIONS: FranchiseLocation[] = [
     driveUrl: "https://drive.google.com/file/d/1vr_dMB5c5YRCbKVAVk2vB9EsHJxEVbSN/view",
     reportPdfUrl: "https://drive.google.com/file/d/1m4QQ-9hQfqtI2xqGG31gPngz2oJxTE0m/view",
     triggerPdfUrl: "",
-    triggerReportUrl: "/manus-storage/madison_trigger_202607_fa271ffb.html",
+    triggerReportUrl: "/manus-storage/madison_trigger_202607_7c93d33a.html",
     fullReportUrl: "/manus-storage/madison_full_report_52219247.html",
     status: "active",
     lastUpdated: "2026-07-10",
