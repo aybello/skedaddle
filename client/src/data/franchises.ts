@@ -10,9 +10,10 @@ export interface FranchiseLocation {
   country: "US" | "CA";
   region: string;
   driveUrl: string;
-  reportPdfUrl?: string;   // Full strategy report PDF (Google Drive)
-  triggerPdfUrl?: string; // Monthly trigger report PDF (Google Drive)
-  fullReportUrl?: string;  // Full interactive HTML report (hosted)
+  reportPdfUrl?: string;    // Full strategy report PDF (Google Drive)
+  triggerPdfUrl?: string;  // Monthly trigger report PDF (Google Drive)
+  triggerReportUrl?: string; // Monthly trigger report hosted HTML
+  fullReportUrl?: string;   // Full interactive HTML report (hosted)
   status: "active" | "pending" | "coming_soon";
   lastUpdated: string;
   kpis: {
@@ -38,6 +39,7 @@ export const FRANCHISE_LOCATIONS: FranchiseLocation[] = [
     driveUrl: "https://drive.google.com/file/d/1wEL923rGDt4iIDZiR4Ik-OBc9Vd-EO35/view",
     reportPdfUrl: "https://drive.google.com/file/d/1EH56hmudujaWJRg8If2DtYG-zSdp0hSb/view",
     triggerPdfUrl: "https://drive.google.com/file/d/1cwLsO5CkRSqfwyIdEfr9kPHFZgUc-iRr/view",
+    triggerReportUrl: "/manus-storage/milwaukee_trigger_202607_d0ba4849.html",
     fullReportUrl: "/manus-storage/milwaukee_full_report_3b78c0d1.html",
     status: "active",
     lastUpdated: "2026-07-10",

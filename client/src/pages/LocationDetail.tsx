@@ -237,9 +237,9 @@ export default function LocationDetail() {
                       <FileText size={12} /> Full Report
                     </a>
                   )}
-                  {loc.triggerPdfUrl && (
+                  {(loc.triggerReportUrl || loc.triggerPdfUrl) && (
                     <a
-                      href={loc.triggerPdfUrl}
+                      href={loc.triggerReportUrl || loc.triggerPdfUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs flex items-center gap-1 font-semibold transition-opacity hover:opacity-70"
