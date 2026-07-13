@@ -4,10 +4,25 @@
 import PortalLayout from "@/components/PortalLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { getLocationById } from "@/data/franchises";
-import { BarChart2, ExternalLink, FileText, MapPin, TrendingUp } from "lucide-react";
+import { BarChart2, CheckSquare, ExternalLink, FileText, MapPin, Square, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
+import { ACTION_PLANS, type ActionItem } from "@/data/actionPlans";
+
+const CATEGORY_COLORS: Record<ActionItem["category"], { bg: string; text: string }> = {
+  SEO:        { bg: "oklch(0.92 0.06 259)", text: "oklch(0.30 0.12 259)" },
+  GBP:        { bg: "oklch(0.92 0.06 145)", text: "oklch(0.28 0.09 145)" },
+  Content:    { bg: "oklch(0.94 0.06 80)",  text: "oklch(0.45 0.10 80)" },
+  Conversion: { bg: "oklch(0.94 0.06 27)",  text: "oklch(0.45 0.18 27)" },
+  Data:       { bg: "oklch(0.93 0.008 80)", text: "oklch(0.45 0.016 80)" },
+};
+
+const IMPACT_COLORS: Record<ActionItem["impact"], string> = {
+  High:   "oklch(0.42 0.12 145)",
+  Medium: "oklch(0.55 0.10 80)",
+  Low:    "oklch(0.65 0.010 80)",
+};
 
 
 
@@ -23,6 +38,33 @@ export default function LocationDetail() {
       navigate("/");
     }
   }, [user, params.id, navigate]);
+
+  // Territory-specific action plan state
+  const actionPlan = ACTION_PLANS[params.id] || null;
+  const storageKey = `skedaddle_actions_${params.id}`;
+  const [checked, setChecked] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const toggleCheck = (id: string) => {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      localStorage.setItem(storageKey, JSON.stringify(Array.from(next)));
+      return next;
+    });
+  };
+
+  const completedCount = actionPlan ? Array.from(checked).filter(id => actionPlan.some(a => a.id === id)).length : 0;
+  const totalCount = actionPlan ? actionPlan.length : 0;
+  const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const weeks = actionPlan ? Array.from(new Set(actionPlan.map((a) => a.week))) : [];
 
 
 
@@ -211,6 +253,115 @@ export default function LocationDetail() {
           )}
         </section>
 
+        {/* Territory-specific 90-Day Action Plan — only shown for territories with a plan */}
+        {actionPlan && (
+          <section>
+            <div className="flex items-center justify-between mb-2">
+              <h2
+                className="text-lg font-bold"
+                style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "oklch(0.18 0.015 65)" }}
+              >
+                90-Day Action Plan
+              </h2>
+              <div
+                className="text-xs font-semibold"
+                style={{ color: "oklch(0.42 0.09 145)", fontFamily: "Inter, sans-serif" }}
+              >
+                {completedCount}/{totalCount} complete
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div
+              className="h-1.5 rounded-full mb-6 overflow-hidden"
+              style={{ background: "oklch(0.88 0.012 80)" }}
+            >
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${progressPct}%`, background: "oklch(0.42 0.09 145)" }}
+              />
+            </div>
+
+            {/* Action items by week */}
+            {weeks.map((week) => {
+              const items = actionPlan.filter((a) => a.week === week);
+              const weekComplete = items.filter((a) => checked.has(a.id)).length;
+              return (
+                <div key={week} className="mb-6">
+                  <div
+                    className="text-xs font-semibold tracking-widest uppercase mb-3 pb-2"
+                    style={{
+                      color: "oklch(0.42 0.09 145)",
+                      fontFamily: "Inter, sans-serif",
+                      borderBottom: "1px solid oklch(0.88 0.012 80)",
+                    }}
+                  >
+                    {week} · {weekComplete}/{items.length} done
+                  </div>
+                  <div className="space-y-2">
+                    {items.map((action) => {
+                      const done = checked.has(action.id);
+                      const catColor = CATEGORY_COLORS[action.category];
+                      return (
+                        <div
+                          key={action.id}
+                          className="flex items-start gap-3 p-3 rounded-sm border transition-colors cursor-pointer"
+                          style={{
+                            background: done ? "oklch(0.95 0.04 145)" : "oklch(1 0 0)",
+                            borderColor: done ? "oklch(0.82 0.06 145)" : "oklch(0.88 0.012 80)",
+                          }}
+                          onClick={() => toggleCheck(action.id)}
+                        >
+                          <div className="mt-0.5 flex-shrink-0">
+                            {done ? (
+                              <CheckSquare size={16} style={{ color: "oklch(0.42 0.09 145)" }} />
+                            ) : (
+                              <Square size={16} style={{ color: "oklch(0.65 0.010 80)" }} />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div
+                              className="text-sm"
+                              style={{
+                                fontFamily: "Inter, sans-serif",
+                                color: done ? "oklch(0.42 0.09 145)" : "oklch(0.18 0.015 65)",
+                                textDecoration: done ? "line-through" : "none",
+                                opacity: done ? 0.75 : 1,
+                              }}
+                            >
+                              {action.task}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span
+                              className="text-xs px-1.5 py-0.5 rounded-sm"
+                              style={{ background: catColor.bg, color: catColor.text, fontFamily: "Inter, sans-serif", fontWeight: 600 }}
+                            >
+                              {action.category}
+                            </span>
+                            <span
+                              className="text-xs font-semibold"
+                              style={{ color: IMPACT_COLORS[action.impact], fontFamily: "Inter, sans-serif" }}
+                            >
+                              {action.impact}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+
+            <p
+              className="text-xs mt-4"
+              style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}
+            >
+              Progress is saved locally in your browser. Check off items as you complete them.
+            </p>
+          </section>
+        )}
 
       </div>
     </PortalLayout>
