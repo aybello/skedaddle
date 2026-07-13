@@ -172,9 +172,12 @@ function LocationCard({ loc }: { loc: FranchiseLocation }) {
 export default function Home() {
   const { user } = useAuth();
 
+  // Only show complete territories (full-data tag) on the overview
+  const completeLocations = FRANCHISE_LOCATIONS.filter((f) => f.tags?.includes("full-data"));
+
   const visibleLocations =
     user?.role === "admin"
-      ? FRANCHISE_LOCATIONS
+      ? completeLocations
       : FRANCHISE_LOCATIONS.filter((f) => f.id === user?.locationId);
 
   const activeCount = visibleLocations.filter((f) => f.status === "active").length;
@@ -201,7 +204,7 @@ export default function Home() {
             className="text-sm"
             style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}
           >
-            {activeCount} of {totalCount} location{totalCount !== 1 ? "s" : ""} with active dashboards
+            {activeCount} location{activeCount !== 1 ? "s" : ""} with complete dashboards
             {user?.role === "admin" && " · Skedaddle Humane Wildlife Control network"}
           </div>
           <div className="mt-3" style={{ borderTop: "2px solid oklch(0.32 0.09 145)", width: "48px" }} />
@@ -225,7 +228,7 @@ export default function Home() {
               fontFamily: "Inter, sans-serif",
             }}
           >
-            <strong style={{ color: "oklch(0.32 0.09 145)" }}>Admin note:</strong> Dashboards marked "Awaiting Data" will be generated once Salesforce exports are received from each franchise. Contact Dave Henderson (dph@davidhenderson.ca) to request data for additional locations.
+            <strong style={{ color: "oklch(0.32 0.09 145)" }}>Admin note:</strong> 15 additional territories are accessible via the sidebar. Full reports and action plans are being built — Hamilton, Durham, Milwaukee, and Madison are complete.
           </div>
         )}
       </div>
