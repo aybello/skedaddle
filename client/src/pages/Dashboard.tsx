@@ -101,10 +101,12 @@ export default function Dashboard() {
 
   const topSpecies = data.species[0];
   const topSuburb  = data.suburbs[0];
-  const latestGsc  = data.gsc.monthly[data.gsc.monthly.length - 1];
+  const hasGsc     = data.gsc.monthly.length > 0;
+  const latestGsc  = hasGsc ? data.gsc.monthly[data.gsc.monthly.length - 1] : null;
   const gscTrend   = data.gsc.monthly.length >= 2
     ? data.gsc.monthly[data.gsc.monthly.length - 1].clicks - data.gsc.monthly[data.gsc.monthly.length - 2].clicks
     : 0;
+  const hasGbp     = data.gbp.monthly.length > 0;
 
   // Pie chart data — top 6 species
   const pieData = data.species.slice(0, 6).map(s => ({
@@ -131,7 +133,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-        <div style={{ color: "#ffffff60", fontSize: 12 }}>Data: Salesforce + GSC + GBP · Updated July 2026</div>
+        <div style={{ color: "#ffffff60", fontSize: 12 }}>Data: Salesforce{hasGsc ? " + GSC" : ""}{hasGbp ? " + GBP" : ""} · Updated July 2026</div>
       </div>
 
       <div style={{ padding: "32px 32px 48px", maxWidth: 1200, margin: "0 auto" }}>
@@ -142,7 +144,7 @@ export default function Dashboard() {
           <KpiCard icon={Users} label="Total Jobs" value={`${data.total_jobs}`} sub="Completed service calls" color={SAGE} />
           <KpiCard icon={TrendingUp} label="Top Species" value={topSpecies?.species || "—"} sub={topSpecies ? fmt$(topSpecies.total_revenue) : ""} color={GOLD} />
           <KpiCard icon={MapPin} label="Top Suburb" value={topSuburb?.suburb || "—"} sub={topSuburb ? fmt$(topSuburb.revenue) : ""} color={GOLD} />
-          <KpiCard icon={Search} label="GSC Clicks" value={fmtN(data.gsc.total_clicks)} sub={`${gscTrend >= 0 ? "+" : ""}${gscTrend} vs prev month`} color={RUST} />
+          {hasGsc && <KpiCard icon={Search} label="GSC Clicks" value={fmtN(data.gsc.total_clicks)} sub={`${gscTrend >= 0 ? "+" : ""}${gscTrend} vs prev month`} color={RUST} />}
           <KpiCard icon={Phone} label="GBP Calls" value={fmtN(data.gbp.total_calls)} sub={`${fmtN(data.gbp.total_searches)} searches`} color={RUST} />
         </div>
 
@@ -229,7 +231,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── Row 3: GSC Trends ── */}
-        <div style={{ background: CREAM, borderRadius: 10, padding: 24, border: `1px solid ${MIST}`, marginBottom: 32 }}>
+        {hasGsc && <div style={{ background: CREAM, borderRadius: 10, padding: 24, border: `1px solid ${MIST}`, marginBottom: 32 }}>
           <SectionHeader title="Google Search Console — Organic Traffic" subtitle="Monthly clicks and impressions" />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
             <div>
@@ -269,10 +271,10 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        </div>
+        </div>}
 
         {/* ── Row 4: GBP Performance ── */}
-        <div style={{ background: CREAM, borderRadius: 10, padding: 24, border: `1px solid ${MIST}` }}>
+        {hasGbp && <div style={{ background: CREAM, borderRadius: 10, padding: 24, border: `1px solid ${MIST}` }}>
           <SectionHeader title="Google Business Profile Performance" subtitle="Searches, calls, and website clicks — Oct 2024 to Jun 2026" />
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={gbpChart} margin={{ top: 0, right: 0, left: 0, bottom: 40 }}>
@@ -301,7 +303,7 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        </div>
+        </div>}
 
       </div>
     </div>
