@@ -49,6 +49,21 @@ const DEMO_CREDENTIALS: Record<string, { password: string; user: AuthUser }> = {
     password: "atla2026",
     user: { username: "north-atlanta", role: "franchise", locationId: "north-atlanta" },
   },
+  hamilton: { password: "hami2026", user: { username: "hamilton", role: "franchise", locationId: "hamilton" } },
+  durham: { password: "durh2026", user: { username: "durham", role: "franchise", locationId: "durham" } },
+  montreal: { password: "mont2026", user: { username: "montreal", role: "franchise", locationId: "montreal" } },
+  london: { password: "lond2026", user: { username: "london", role: "franchise", locationId: "london" } },
+  "maryland-central": { password: "mdce2026", user: { username: "maryland-central", role: "franchise", locationId: "maryland-central" } },
+  "barrie-north": { password: "barr2026", user: { username: "barrie-north", role: "franchise", locationId: "barrie-north" } },
+  "co-denver": { password: "denv2026", user: { username: "co-denver", role: "franchise", locationId: "co-denver" } },
+  coquitlam: { password: "coqu2026", user: { username: "coquitlam", role: "franchise", locationId: "coquitlam" } },
+  "atlanta-north": { password: "atln2026", user: { username: "atlanta-north", role: "franchise", locationId: "atlanta-north" } },
+  orangeville: { password: "oran2026", user: { username: "orangeville", role: "franchise", locationId: "orangeville" } },
+  "oh-columbus": { password: "colu2026", user: { username: "oh-columbus", role: "franchise", locationId: "oh-columbus" } },
+  "pa-pittsburgh": { password: "pitt2026", user: { username: "pa-pittsburgh", role: "franchise", locationId: "pa-pittsburgh" } },
+  "md-baltimore": { password: "balt2026", user: { username: "md-baltimore", role: "franchise", locationId: "md-baltimore" } },
+  okanagan: { password: "okan2026", user: { username: "okanagan", role: "franchise", locationId: "okanagan" } },
+  "l-windsor": { password: "wind2026", user: { username: "l-windsor", role: "franchise", locationId: "l-windsor" } },
 };
 
 const SESSION_KEY = "skedaddle_portal_user";
