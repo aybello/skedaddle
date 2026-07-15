@@ -43,13 +43,16 @@ async function buildPromptFromPost(
 Given a GBP post title and body, generate a highly specific, photorealistic image generation prompt.
 
 Rules:
-- The image must show the ANIMAL prominently and clearly (not just implied)
-- Include a Skedaddle technician in a TEAL uniform
+- The ANIMAL must be the visual centrepiece of the image — large, close-up, clearly identifiable, filling at least 25% of the frame
+- For small animals (mice, bats, chipmunks, skunks): show the animal held in a gloved hand OR in a live trap in the foreground, very close to the camera lens
+- For large animals (raccoons, squirrels, groundhogs): show the animal face-on or mid-action (climbing, peeking, being guided out)
+- Include a Skedaddle technician in a TEAL uniform as a supporting element (not the main focus)
 - Set the scene in ${suburbText}, ${cityState}
 - The scene must match the post content exactly (species, situation, season if mentioned)
-- Style: photorealistic, professional DSLR photography, warm natural light
+- Style: photorealistic, professional DSLR photography, shallow depth of field, warm natural light
+- NEVER generate an image that only shows damage, droppings, or an empty environment — the animal MUST be visible
 - End with: "no text in image"
-- Also return a short service label (e.g. "Raccoon Removal", "Squirrel Exclusion", "Bat in Attic")
+- Also return a short service label (e.g. "Raccoon Removal", "Squirrel Exclusion", "Bat Exclusion", "Mouse Removal")
 
 Respond with JSON: { "prompt": "...", "serviceLabel": "..." }`;
 
@@ -164,7 +167,9 @@ async function generateSingleImage(
   const rawBuffer = Buffer.from(await resp.arrayBuffer());
   const branded = await addBrandOverlay(rawBuffer, serviceLabel, cityState);
 
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 40);
+  // Normalize to ASCII first (strips em dashes, smart quotes, accented chars, etc.)
+  const asciiTitle = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x00-\x7F]/g, "");
+  const slug = asciiTitle.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 40);
   const filename = `${territory}_${slug}.jpg`;
   const storageKey = `gbp-images/${filename}`;
   const { url: storedUrl } = await storagePut(storageKey, branded, "image/jpeg");
