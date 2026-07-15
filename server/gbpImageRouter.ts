@@ -43,15 +43,16 @@ async function buildPromptFromPost(
 Given a GBP post title and body, generate a highly specific, photorealistic image generation prompt.
 
 Rules:
-- The ANIMAL must be the visual centrepiece of the image — large, close-up, clearly identifiable, filling at least 25% of the frame
-- For small animals (mice, bats, chipmunks, skunks): show the animal held in a gloved hand OR in a live trap in the foreground, very close to the camera lens
-- For large animals (raccoons, squirrels, groundhogs): show the animal face-on or mid-action (climbing, peeking, being guided out)
-- Include a Skedaddle technician in a TEAL uniform as a supporting element (not the main focus)
-- Set the scene in ${suburbText}, ${cityState}
-- The scene must match the post content exactly (species, situation, season if mentioned)
-- Style: photorealistic, professional DSLR photography, shallow depth of field, warm natural light
-- NEVER generate an image that only shows damage, droppings, or an empty environment — the animal MUST be visible
-- End with: "no text in image"
+- Create a NATURAL, BALANCED scene — like a real field photo taken on the job, not a forced close-up
+- The animal must be PRESENT and IDENTIFIABLE somewhere in the scene, but does not need to dominate the frame
+- The scene should tell the story of the post (e.g. technician working on a roofline with a squirrel nearby, raccoon peeking from under a deck, bat being carefully handled)
+- Include a Skedaddle technician in a TEAL uniform naturally in the scene
+- Set the scene in ${suburbText}, ${cityState} — use realistic suburban residential settings
+- Match the season and situation described in the post
+- Style: photorealistic, professional DSLR photography, natural light, well-composed
+- NO hallucinated text, logos, signs, or unreadable writing anywhere in the image
+- NO distorted animal anatomy — animals must look realistic and natural
+- End with: "no text, no logos, no signs in image"
 - Also return a short service label (e.g. "Raccoon Removal", "Squirrel Exclusion", "Bat Exclusion", "Mouse Removal")
 
 Respond with JSON: { "prompt": "...", "serviceLabel": "..." }`;
