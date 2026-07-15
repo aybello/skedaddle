@@ -13,6 +13,7 @@ import Network from "./pages/Network";
 import NotFound from "./pages/NotFound";
 import Resources from "./pages/Resources";
 import Tools from "./pages/Tools";
+import GbpImageGenerator from "./pages/GbpImageGenerator";
 import { Redirect, Route, Switch } from "wouter";
 
 // Protected route — redirects to /login if not authenticated
@@ -28,7 +29,6 @@ function ProtectedRoute({
   if (adminOnly && user?.role !== "admin") return <Redirect to="/" />;
   return <Component />;
 }
-
 function Router() {
   const { isAuthenticated } = useAuth();
 
@@ -60,6 +60,9 @@ function Router() {
       </Route>
       <Route path="/trigger/:id">
         <ProtectedRoute component={TriggerReport} />
+      </Route>
+      <Route path="/gbp-images">
+        <ProtectedRoute component={GbpImageGenerator} />
       </Route>
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

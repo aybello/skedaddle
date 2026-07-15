@@ -5625,5 +5625,5 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
           "total_calls": 19,
           "total_clicks": 52
       }
-  },
+  }
 };
