@@ -168,10 +168,20 @@ async function generateSingleImage(
   const rawBuffer = Buffer.from(await resp.arrayBuffer());
   const branded = await addBrandOverlay(rawBuffer, serviceLabel, cityState);
 
-  // Normalize to ASCII first (strips em dashes, smart quotes, accented chars, etc.)
-  const asciiTitle = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x00-\x7F]/g, "");
-  const slug = asciiTitle.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 40);
-  const filename = `${territory}_${slug}.jpg`;
+  // Strip ALL non-ASCII characters from every part of the storage key
+  // (em dashes, smart quotes, accented chars, etc. all cause Forge presign 400 errors)
+  const toAsciiSlug = (s: string, maxLen = 40) =>
+    s.normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")   // strip combining diacritics
+      .replace(/[^\x00-\x7F]/g, "")       // strip remaining non-ASCII
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, maxLen);
+
+  const slug = toAsciiSlug(title, 40);
+  const safeTerritory = toAsciiSlug(territory, 20);
+  const filename = `${safeTerritory}_${slug}.jpg`;
   const storageKey = `gbp-images/${filename}`;
   const { url: storedUrl } = await storagePut(storageKey, branded, "image/jpeg");
 
