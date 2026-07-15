@@ -157,9 +157,9 @@ async function generateSingleImage(
       guidance_scale: 3.5,
       safety_tolerance: "2",
     },
-  }) as unknown as { images: Array<{ url: string }> };
+  }) as unknown as { data: { images: Array<{ url: string }> }; requestId: string };
 
-  const imageUrl = result.images[0].url;
+  const imageUrl = result.data.images[0].url;
   const resp = await fetch(imageUrl);
   const rawBuffer = Buffer.from(await resp.arrayBuffer());
   const branded = await addBrandOverlay(rawBuffer, serviceLabel, cityState);
