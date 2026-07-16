@@ -63,3 +63,10 @@
 ## Prompt Realism Overhaul (July 16)
 - [x] Rewrite prompt strategy to produce realistic single-subject photos (not staged composites)
 - [x] Create 10-post test CSV for bulk generation testing
+
+## Model Switch: Flux Pro → GPT Image 2 (July 16)
+- [x] Replace fal.ai Flux Pro calls with GPT Image 2 via built-in forge API
+- [x] Update QA retry loop to use GPT Image 2 for retries
+- [x] Remove fal.ai client import dependency from gbpImageRouter
+- [x] Update tests to reflect new model (remove FAL_KEY checks)
+- [x] Verify end-to-end generation works with new model

@@ -69,18 +69,19 @@ describe("gbpImage.getSuburbs", () => {
   });
 });
 
-// ── FAL_KEY validation ───────────────────────────────────────────────────────
-describe("FAL_KEY environment", () => {
-  it("FAL_KEY is set in environment", () => {
-    expect(process.env.FAL_KEY).toBeTruthy();
-    expect(typeof process.env.FAL_KEY).toBe("string");
-    expect(process.env.FAL_KEY!.length).toBeGreaterThan(10);
+// ── GPT Image 2 / Forge API validation ──────────────────────────────────────
+describe("GPT Image 2 (Forge API) environment", () => {
+  it("BUILT_IN_FORGE_API_URL is set and looks like a URL", () => {
+    const url = process.env.BUILT_IN_FORGE_API_URL;
+    expect(url).toBeTruthy();
+    expect(url).toMatch(/^https?:\/\//);
   });
 
-  it("FAL_KEY has expected format (uuid:hex)", () => {
-    const key = process.env.FAL_KEY!;
-    // Format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:hexhexhex
-    expect(key).toMatch(/^[0-9a-f-]+:[0-9a-f]+$/i);
+  it("BUILT_IN_FORGE_API_KEY is set and non-empty", () => {
+    const key = process.env.BUILT_IN_FORGE_API_KEY;
+    expect(key).toBeTruthy();
+    expect(typeof key).toBe("string");
+    expect(key!.length).toBeGreaterThan(10);
   });
 });
 

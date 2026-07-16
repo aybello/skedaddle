@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { publicProcedure, router } from "./_core/trpc";
-import { fal } from "@fal-ai/client";
 import { invokeLLM } from "./_core/llm";
 import sharp from "sharp";
 import { storagePut } from "./storage";
@@ -9,6 +8,7 @@ import pLimit from "p-limit";
 import { existsSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { ENV } from "./_core/env";
 
 // ── Logo PNG loading (module scope, loaded once) ────────────────────────────
 // Place the real Skedaddle logo at: server/assets/skedaddle-logo.png
@@ -525,6 +525,40 @@ function escapePango(str: string): string {
     .replace(/'/g, "&apos;");
 }
 
+// ── Generate image via GPT Image 2 (built-in forge API) ─────────────────────
+async function generateImageViaGPT(prompt: string): Promise<Buffer> {
+  if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
+    throw new Error("BUILT_IN_FORGE_API_URL or BUILT_IN_FORGE_API_KEY not configured");
+  }
+
+  const baseUrl = ENV.forgeApiUrl.endsWith("/") ? ENV.forgeApiUrl : `${ENV.forgeApiUrl}/`;
+  const fullUrl = new URL("images.v1.ImageService/GenerateImage", baseUrl).toString();
+
+  const response = await fetch(fullUrl, {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      "connect-protocol-version": "1",
+      authorization: `Bearer ${ENV.forgeApiKey}`,
+    },
+    body: JSON.stringify({
+      prompt,
+      original_images: [],
+      model: "MODEL_GPT_IMAGE_2",
+      quality: "medium",
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`GPT Image 2 generation failed (${response.status}): ${detail.slice(0, 200)}`);
+  }
+
+  const result = (await response.json()) as { image: { b64Json: string; mimeType: string } };
+  return Buffer.from(result.image.b64Json, "base64");
+}
+
 // ── Generate single image (with vision QA retry) ────────────────────────────
 async function generateSingleImage(
   title: string,
@@ -532,53 +566,30 @@ async function generateSingleImage(
   territory: string,
   suburb: string,
 ): Promise<{ url: string; filename: string; serviceLabel: string; prompt: string }> {
-  const falKey = process.env.FAL_KEY;
-  if (!falKey) throw new Error("FAL_KEY not configured");
-
-  fal.config({ credentials: falKey });
-
   const territoryData = TERRITORIES[territory];
   const cityState = territoryData?.cityState ?? territory;
 
   const { prompt, serviceLabel, fields } = await buildPrompt(title, body, territory, suburb);
 
-  // Generate image via fal.ai Flux Pro (using v1.1 if available, fallback to base)
-  const falModel = "fal-ai/flux-pro/v1.1";
-  let imageUrl: string;
-
-  try {
-    const result = await (fal.subscribe as Function)(falModel, {
-      input: {
-        prompt,
-        image_size: { width: 1200, height: 900 },
-        num_images: 1,
-        guidance_scale: 3.5,
-        safety_tolerance: "2",
-      },
-    }) as { data: { images: Array<{ url: string }> }; requestId: string };
-    imageUrl = result.data.images[0].url;
-  } catch {
-    // Fallback to base flux-pro if v1.1 not available
-    const result = await fal.subscribe("fal-ai/flux-pro", {
-      input: {
-        prompt,
-        image_size: { width: 1200, height: 900 },
-        num_images: 1,
-        num_inference_steps: 28,
-        guidance_scale: 3.5,
-        safety_tolerance: "2",
-      },
-    }) as unknown as { data: { images: Array<{ url: string }> }; requestId: string };
-    imageUrl = result.data.images[0].url;
-  }
+  // Generate image via GPT Image 2 (built-in forge API)
+  let rawBuffer = await generateImageViaGPT(prompt);
+  console.log(`[GBP] Generated image via GPT Image 2 for species: ${fields.species}`);
 
   // #3: Vision QA check — retry up to 2 times for species accuracy
   const needsQA = QA_REQUIRED_ANIMALS.some(a => fields.species.toLowerCase().includes(a));
   console.log(`[GBP] Species: ${fields.species}, needsQA: ${needsQA}, sizeClass: ${fields.sizeClass}`);
   if (needsQA) {
     const speciesDesc = getSpeciesDescription(fields.species);
+
     for (let attempt = 0; attempt < 2; attempt++) {
-      const passed = await visionQACheck(imageUrl, fields.species);
+      // Upload current buffer as temp for vision QA check
+      const tempResized = await sharp(rawBuffer)
+        .resize(1200, 900, { fit: "cover", position: "center" })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+      const { url: tempUrl } = await storagePut(`gbp-images/qa-temp-${Date.now()}-${attempt}.jpg`, tempResized, "image/jpeg");
+
+      const passed = await visionQACheck(tempUrl, fields.species);
       console.log(`[GBP] QA attempt ${attempt}: passed=${passed} for species=${fields.species}`);
       if (passed) break;
       // Retry with increasingly specific prompt
@@ -586,17 +597,7 @@ async function generateSingleImage(
         ? `Close-up wildlife photograph: a ${speciesDesc} clearly visible in the center foreground, occupying at least 30% of the frame. The animal is sitting on the ground near a suburban home foundation. Sharp focus on the animal showing its distinctive features. The animal is NOT being held or touched by anyone. Behind in soft bokeh: a Skedaddle wildlife technician in teal polo shirt inspecting the home exterior in ${cityState}. Photorealistic, Canon EOS R5, 85mm f/1.8, golden hour natural light.`
         : `Extreme close-up nature photograph of a single ${speciesDesc}. The animal fills most of the frame, photographed at eye level in a suburban backyard setting. Ultra-sharp detail on fur/feathers and distinctive markings. No humans visible. Shallow depth of field, background is a blurred residential home. Shot in ${suburb || cityState}. Photorealistic, Nikon Z9, 105mm macro lens, f/2.8.`;
       try {
-        const retryResult = await fal.subscribe("fal-ai/flux-pro", {
-          input: {
-            prompt: retryPrompt,
-            image_size: { width: 1200, height: 900 },
-            num_images: 1,
-            num_inference_steps: 28,
-            guidance_scale: 3.5,
-            safety_tolerance: "2",
-          },
-        }) as unknown as { data: { images: Array<{ url: string }> }; requestId: string };
-        imageUrl = retryResult.data.images[0].url;
+        rawBuffer = await generateImageViaGPT(retryPrompt);
       } catch {
         // If retry fails, keep the current image and break
         break;
@@ -604,10 +605,8 @@ async function generateSingleImage(
     }
   }
 
-  const resp = await fetch(imageUrl);
-  const rawBuffer = Buffer.from(await resp.arrayBuffer());
   const rawMeta = await sharp(rawBuffer).metadata();
-  console.log(`[GBP] Raw image from fal: ${rawMeta.width}x${rawMeta.height}`);
+  console.log(`[GBP] Raw image from GPT Image 2: ${rawMeta.width}x${rawMeta.height}`);
 
   // Enforce exact 1200x900 dimensions regardless of what the model returns
   const resizedBuffer = await sharp(rawBuffer)
