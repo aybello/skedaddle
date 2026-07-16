@@ -68,8 +68,9 @@ function toAsciiSlug(s: string, maxLen = 40): string {
 }
 
 // ── Species size classification ─────────────────────────────────────────────
-// Animals that need vision QA (small or hard-to-render consistently)
-const QA_REQUIRED_ANIMALS = ["mouse", "mice", "bat", "bats", "vole", "voles", "chipmunk", "chipmunks", "mole", "moles", "shrew", "shrews", "skunk", "skunks"];
+// Animals that need vision QA (any species that has been observed rendering incorrectly)
+// This now includes ALL species since Flux Pro can confuse any animal
+const QA_REQUIRED_ANIMALS = ["mouse", "mice", "bat", "bats", "vole", "voles", "chipmunk", "chipmunks", "mole", "moles", "shrew", "shrews", "skunk", "skunks", "raccoon", "raccoons", "squirrel", "squirrels", "opossum", "opossums", "groundhog", "groundhogs"];
 const SMALL_ANIMALS = ["mouse", "mice", "bat", "bats", "vole", "voles", "chipmunk", "chipmunks", "mole", "moles", "shrew", "shrews"];
 const LARGE_ANIMALS = ["raccoon", "raccoons", "squirrel", "squirrels", "opossum", "opossums", "groundhog", "groundhogs", "fox", "foxes", "coyote", "coyotes", "deer", "skunk", "skunks"];
 
@@ -80,16 +81,42 @@ function classifyAnimalSize(species: string): "small" | "large" | "unknown" {
   return "unknown";
 }
 
+// ── Species physical description map (for prompt accuracy) ──────────────────
+const SPECIES_DESCRIPTIONS: Record<string, string> = {
+  raccoon: "raccoon (medium-sized mammal with distinctive black mask markings around eyes, bushy ringed black-and-grey tail, grey-brown fur, stocky build)",
+  squirrel: "grey squirrel (small rodent about 9 inches long, bushy grey tail, grey fur with white belly, small rounded ears)",
+  skunk: "striped skunk (black fur with two prominent white stripes running from head to bushy tail, small pointed face, short legs)",
+  bat: "little brown bat (small flying mammal with dark brown fur, leathery outstretched wings, tiny body about 3 inches long)",
+  mouse: "house mouse (very small rodent only 2-3 inches long, grey-brown fur, large round ears relative to body, long thin tail)",
+  mice: "house mice (very small rodents only 2-3 inches long, grey-brown fur, large round ears relative to body, long thin tails)",
+  chipmunk: "eastern chipmunk (tiny rodent with distinctive alternating brown and white stripes along its back, cheek pouches, small bushy tail)",
+  groundhog: "groundhog (large stocky rodent also called woodchuck, brown fur, flat broad head, short powerful legs, about 20 inches long)",
+  opossum: "Virginia opossum (grey-white fur, long pointed snout with pink nose, hairless prehensile tail, large dark eyes)",
+  bird: "bird (common pest bird such as starling or sparrow near a nest of twigs and debris)",
+  vole: "meadow vole (very small mouse-like rodent with short tail, brown fur, compact rounded body)",
+  mole: "eastern mole (small burrowing mammal with velvety dark fur, large paddle-shaped front paws, tiny hidden eyes)",
+};
+
+function getSpeciesDescription(species: string): string {
+  const lower = species.toLowerCase();
+  for (const [key, desc] of Object.entries(SPECIES_DESCRIPTIONS)) {
+    if (lower.includes(key)) return desc;
+  }
+  return species;
+}
+
 // ── Action/framing variety pool (rotated per generation for anti-spam) ──────
+// NOTE: The technician must NEVER be shown touching, holding, or grabbing the animal.
+// Skedaddle uses humane exclusion: one-way doors, screening, entry-point sealing.
 const ACTION_FRAMINGS = [
-  "technician inspecting a roofline with the animal nearby",
-  "technician crouching near a foundation vent with the animal visible",
-  "technician setting up a one-way exclusion device, animal watching from a distance",
-  "technician on a ladder near soffit with the animal on the roof edge",
-  "technician examining entry points on a deck with the animal peeking out",
-  "wide shot of a suburban home exterior with technician working and animal in mid-ground",
-  "technician walking toward a detached garage, animal visible near the structure",
-  "technician documenting damage near a chimney cap with the animal perched above",
+  "technician inspecting a roofline while the animal watches from a safe distance",
+  "technician crouching near a foundation vent installing mesh screening, with the animal visible nearby on the ground",
+  "technician installing a one-way exclusion device on a soffit, animal observing from a tree branch",
+  "technician on a ladder sealing an entry point near the roofline, animal perched on the roof edge several feet away",
+  "technician examining and sealing entry points on a deck, animal peeking out from under the structure",
+  "wide shot of a suburban home exterior with technician working on exclusion hardware and animal in the mid-ground",
+  "technician walking toward a detached garage carrying exclusion materials, animal visible near the structure",
+  "technician documenting damage near a chimney cap with clipboard, animal perched above at a distance",
 ];
 
 let actionFramingCounter = 0;
@@ -206,23 +233,27 @@ function buildPromptFromFields(
   };
   const lighting = seasonLighting[season.toLowerCase()] || seasonLighting.summer;
 
+  // Get detailed species description for accurate rendering
+  const speciesDesc = getSpeciesDescription(species);
+
   // Composition strategy based on animal size
+  // CRITICAL: Technician must NEVER be shown touching, holding, or grabbing the animal
   let compositionDirective: string;
   if (sizeClass === "small") {
-    // Small animals: place in foreground for visibility at 1024px
-    compositionDirective = `A ${species} in the near foreground, sharp and clearly visible (held in a gloved hand, in a humane live trap, or perched on a surface close to camera), with shallow depth of field. Behind in soft focus: a Skedaddle technician in a teal polo shirt ${action} at a ${scene}`;
+    // Small animals: place in foreground for visibility — in a humane trap or on a surface, NOT held
+    compositionDirective = `A ${speciesDesc} in the near foreground, sharp and clearly visible, perched on a surface or inside a humane wire live-trap close to camera, with shallow depth of field. The technician is NOT touching the animal. Behind in soft focus: a Skedaddle wildlife technician in a teal polo shirt and work pants ${action} at a ${scene}`;
   } else {
-    // Large animals and unknown: balanced field photo
-    compositionDirective = `A ${species} clearly visible and identifiable as the subject, positioned in the mid-ground of the frame. A Skedaddle technician in a teal polo shirt is ${actionFraming}, at a ${scene}. The ${species} is sharp with shallow depth of field separating it from the background`;
+    // Large animals and unknown: balanced field photo with clear separation between tech and animal
+    compositionDirective = `A ${speciesDesc} clearly visible and identifiable as the subject, positioned in the mid-ground of the frame. A Skedaddle wildlife technician in a teal polo shirt is ${actionFraming}, at a ${scene}. The technician is working on the building structure and is NOT touching or holding the animal. The ${species} is sharp with shallow depth of field separating it from the background`;
   }
 
   const prompt = [
     `Professional DSLR photograph, ${compositionDirective}.`,
     `Location: ${suburbText}, ${cityState}, realistic suburban residential neighborhood.`,
     `${lighting}.`,
-    `The technician is naturally ${action}.`,
+    `The technician is working on the building structure, ${action}. The technician does not touch or hold the animal at any point.`,
     `Photorealistic, well-composed, natural candid moment, editorial quality wildlife control documentation photography.`,
-    `Shot on Canon EOS R5, 85mm f/1.8, natural light.`,
+    `Shot on Canon EOS R5, 85mm f/1.8, natural light, sharp focus on the animal.`,
   ].join(" ");
 
   return prompt;
@@ -245,15 +276,25 @@ async function buildPrompt(
   return { prompt, serviceLabel: fields.serviceLabel, fields };
 }
 
-// ── #3: Vision-QA check (is the animal clearly identifiable?) ───────────────
+// ── #3: Vision-QA check (is the CORRECT species clearly identifiable?) ───────
+// This checks both that an animal is present AND that it's the correct species.
 async function visionQACheck(imageUrl: string, species: string): Promise<boolean> {
+  const speciesDesc = getSpeciesDescription(species);
   try {
     const result = await invokeLLM({
       model: "gemini-3-flash-preview",
       messages: [{
         role: "user",
         content: [
-          { type: "text", text: `Look at this photograph. Is a ${species} clearly identifiable as a subject in this image? Answer with JSON: { "animalVisible": true/false, "confidence": "high"/"medium"/"low" }. The animal does not need to dominate the frame, but it must be recognizable as a ${species} to a viewer.` },
+          { type: "text", text: `Look at this photograph carefully. I need you to verify whether the animal shown is specifically a ${species}.
+
+Key identifying features of a ${speciesDesc}.
+
+Answer with JSON:
+- "correctSpecies": true if the animal in the image is clearly a ${species} (has the correct distinguishing features), false if it looks like a different animal or is unidentifiable
+- "animalVisible": true if any animal is clearly visible in the image, false if no animal is present
+- "confidence": "high", "medium", or "low" based on how certain you are
+- "actualSpecies": your best guess of what animal is actually shown (e.g. "raccoon", "groundhog", "generic rodent")` },
           { type: "image_url", image_url: { url: imageUrl, detail: "auto" } },
         ],
       }],
@@ -264,10 +305,12 @@ async function visionQACheck(imageUrl: string, species: string): Promise<boolean
           schema: {
             type: "object",
             properties: {
+              correctSpecies: { type: "boolean" },
               animalVisible: { type: "boolean" },
               confidence: { type: "string", enum: ["high", "medium", "low"] },
+              actualSpecies: { type: "string" },
             },
-            required: ["animalVisible", "confidence"],
+            required: ["correctSpecies", "animalVisible", "confidence", "actualSpecies"],
             additionalProperties: false,
           },
           strict: true,
@@ -278,8 +321,8 @@ async function visionQACheck(imageUrl: string, species: string): Promise<boolean
     const rawContent = result.choices[0]?.message?.content;
     const contentStr = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent);
     const parsed = JSON.parse(contentStr);
-    // Pass if animal is visible with at least medium confidence
-    return parsed.animalVisible === true && parsed.confidence !== "low";
+    // Pass only if the correct species is visible with at least medium confidence
+    return parsed.correctSpecies === true && parsed.animalVisible === true && parsed.confidence !== "low";
   } catch {
     // If vision check fails, pass the image through (don't block on QA failure)
     return true;
@@ -304,6 +347,8 @@ async function addBrandOverlay(
   const fontSizeSmall = Math.round(H * 0.032);
 
   // Build the SVG overlay (teal bar + service label + city)
+  // Use "DejaVu Sans" which is available on Linux servers, with sans-serif fallback
+  const fontFamily = "DejaVu Sans, Noto Sans, Liberation Sans, sans-serif";
   // Brand mark is either the logo PNG (composited separately) or text fallback
   const brandTextSvg = logoPngBuffer
     ? "" // Logo will be composited as a separate layer
@@ -311,13 +356,13 @@ async function addBrandOverlay(
         const brandFontSize = Math.round(H * 0.038);
         const brandX = W - Math.round(W * 0.04);
         const brandY = barY + Math.round(barH * 0.55);
-        return `<text x="${brandX}" y="${brandY}" font-family="Arial, sans-serif" font-size="${brandFontSize}" font-weight="bold" fill="white" text-anchor="end">Skedaddle</text>`;
+        return `<text x="${brandX}" y="${brandY}" font-family="${fontFamily}" font-size="${brandFontSize}" font-weight="bold" fill="white" text-anchor="end">Skedaddle</text>`;
       })();
 
   const svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="${barY}" width="${W}" height="${barH}" fill="rgba(1,105,111,0.85)" rx="0"/>
-    <text x="${textX}" y="${textY + fontSize}" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" fill="white">${escapeXml(serviceLabel)}</text>
-    <text x="${textX}" y="${textY + fontSize + fontSizeSmall + 4}" font-family="Arial, sans-serif" font-size="${fontSizeSmall}" fill="rgba(200,235,235,0.9)">${escapeXml(cityState)}</text>
+    <text x="${textX}" y="${textY + fontSize}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="bold" fill="white">${escapeXml(serviceLabel)}</text>
+    <text x="${textX}" y="${textY + fontSize + fontSizeSmall + 4}" font-family="${fontFamily}" font-size="${fontSizeSmall}" fill="rgba(200,235,235,0.9)">${escapeXml(cityState)}</text>
     ${brandTextSvg}
   </svg>`;
 
@@ -392,7 +437,7 @@ async function generateSingleImage(
     const result = await fal.subscribe("fal-ai/flux-pro", {
       input: {
         prompt,
-        image_size: "landscape_4_3",
+        image_size: { width: 1200, height: 900 },
         num_images: 1,
         num_inference_steps: 28,
         guidance_scale: 3.5,
@@ -407,13 +452,14 @@ async function generateSingleImage(
   if (needsQA) {
     const passed = await visionQACheck(imageUrl, fields.species);
     if (!passed) {
-      // Retry with a strengthened prompt emphasizing the animal
-      const retryPrompt = `Close-up photograph: a ${fields.species} clearly visible in the foreground, held in a gloved hand or in a humane live trap, sharp focus on the animal. Behind in soft bokeh: a Skedaddle technician in teal polo at a suburban home in ${cityState}. Photorealistic, Canon EOS R5, 85mm f/1.8, natural light. Shot on location in ${suburb || cityState}.`;
+      // Retry with a strengthened prompt emphasizing the animal with species-specific description
+      const speciesDesc = getSpeciesDescription(fields.species);
+      const retryPrompt = `Close-up wildlife photograph: a ${speciesDesc} clearly visible in the foreground, sitting on a surface or inside a humane wire live-trap, sharp focus on the animal showing its distinctive features. The animal is NOT being held or touched by anyone. Behind in soft bokeh: a Skedaddle wildlife technician in teal polo working on a suburban home in ${cityState}. Photorealistic, Canon EOS R5, 85mm f/1.8, natural light. Shot on location in ${suburb || cityState}.`;
       try {
         const retryResult = await fal.subscribe("fal-ai/flux-pro", {
           input: {
             prompt: retryPrompt,
-            image_size: "landscape_4_3",
+            image_size: { width: 1200, height: 900 },
             num_images: 1,
             num_inference_steps: 28,
             guidance_scale: 3.5,

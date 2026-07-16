@@ -53,3 +53,9 @@
 - [x] #5 Model upgrade (Claude 3.5 Haiku → best available Haiku on built-in API)
 - [x] #6 Interim prompt rewrite (no negatives, balanced composition, depth-of-field, small-animal foreground)
 - [x] #7 Logo overlay prep + minor code fixes (stray space, GBP sizing, flux-pro version check)
+
+## Image Quality Fixes (July 2026)
+- [x] Fix brand overlay text rendering as garbled boxes (font not available in sharp SVG renderer)
+- [x] Fix animal species accuracy — animals don't match the requested species (raccoons look like groundhogs, skunks look like opossums, mice are too large)
+- [x] Fix technician-animal interaction — technician should NEVER be shown touching/handling animals directly (use exclusion devices, one-way doors, observation from distance)
+- [x] Fix image dimensions — use explicit 1200x900 pixel dimensions instead of landscape_4_3 preset
