@@ -36,6 +36,11 @@
 - [x] Route /gbp-images wired in App.tsx
 - [x] Vitest tests for router and FAL_KEY
 
+## Lightbox Enhancements
+- [x] Lightbox: add prev/next arrow navigation through all generated images
+- [x] Lightbox: display the exact AI prompt used to generate the image
+- [x] Lightbox: add Regenerate button to re-generate a single image from inside the lightbox
+
 ## Pending
 - [ ] Remaining 15 territory strategy reports (Minneapolis, Coquitlam, Baltimore, etc.)
 - [ ] Logo overlay once Skedaddle logo PNG is provided

@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { useState, useRef } from "react";
-import { Download, ImageIcon, Plus, Trash2, Upload, Loader2, CheckCircle2, XCircle, Sparkles, ZoomIn, X } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Download, ImageIcon, Plus, Trash2, Upload, Loader2, CheckCircle2, XCircle, Sparkles, ZoomIn, X, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import React from "react";
 import PortalLayout from "@/components/PortalLayout";
 
@@ -28,9 +28,197 @@ interface GeneratedImage {
   url: string;
   filename: string;
   serviceLabel: string;
+  prompt: string;
   title: string;
+  territory: string;
+  suburb: string;
+  body: string;
   success: boolean;
   error?: string;
+}
+
+// ── Lightbox ──────────────────────────────────────────────────────────────────
+interface LightboxProps {
+  images: GeneratedImage[];
+  currentIndex: number;
+  onClose: () => void;
+  onNavigate: (index: number) => void;
+  onRegenerate: (index: number) => void;
+  regeneratingIndex: number | null;
+}
+
+function Lightbox({ images, currentIndex, onClose, onNavigate, onRegenerate, regeneratingIndex }: LightboxProps) {
+  const img = images[currentIndex];
+  if (!img) return null;
+
+  // Skip failed images when navigating
+  const hasPrev = images.slice(0, currentIndex).some((im) => im.success);
+  const hasNext = images.slice(currentIndex + 1).some((im) => im.success);
+
+  const goPrev = () => {
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (images[i].success) { onNavigate(i); return; }
+    }
+  };
+  const goNext = () => {
+    for (let i = currentIndex + 1; i < images.length; i++) {
+      if (images[i].success) { onNavigate(i); return; }
+    }
+  };
+  const isRegenerating = regeneratingIndex === currentIndex;
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "Escape") onClose();
+    if (e.key === "ArrowLeft" && hasPrev) goPrev();
+    if (e.key === "ArrowRight" && hasNext) goNext();
+  }, [currentIndex, hasPrev, hasNext, onClose, onNavigate]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.92)" }}
+      onClick={onClose}
+      onKeyDown={handleKeyDown}
+      tabIndex={-1}
+    >
+      {/* Main container */}
+      <div
+        className="relative flex flex-col max-w-4xl w-full mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Image area */}
+        <div className="relative">
+          {isRegenerating ? (
+            <div
+              className="w-full flex items-center justify-center rounded-lg"
+              style={{ aspectRatio: "4/3", background: "rgba(255,255,255,0.06)" }}
+            >
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 size={36} className="animate-spin text-white opacity-70" />
+                <p className="text-sm text-white opacity-60">Regenerating image…</p>
+              </div>
+            </div>
+          ) : (
+            <img
+              src={img.url}
+              alt={img.serviceLabel}
+              className="w-full h-auto max-h-[65vh] object-contain rounded-lg shadow-2xl"
+            />
+          )}
+
+          {/* Service label badge */}
+          <div className="absolute top-3 left-3">
+            <Badge className="text-xs" style={{ background: "oklch(0.32 0.09 145)", color: "white" }}>
+              {img.serviceLabel}
+            </Badge>
+          </div>
+
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+            style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
+            aria-label="Close lightbox"
+          >
+            <X size={16} />
+          </button>
+
+          {/* Prev arrow */}
+          {hasPrev && (
+            <button
+              onClick={goPrev}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+              style={{ background: "rgba(0,0,0,0.55)", color: "white" }}
+              aria-label="Previous image"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          )}
+
+          {/* Next arrow */}
+          {hasNext && (
+            <button
+              onClick={goNext}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+              style={{ background: "rgba(0,0,0,0.55)", color: "white" }}
+              aria-label="Next image"
+            >
+              <ChevronRight size={20} />
+            </button>
+          )}
+        </div>
+
+        {/* Below-image bar: title, counter, actions */}
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm text-white opacity-90 truncate font-medium">{img.title}</p>
+            {images.length > 1 && (
+              <p className="text-xs text-white opacity-50 mt-0.5">{currentIndex + 1} / {images.length}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => onRegenerate(currentIndex)}
+              disabled={isRegenerating}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded transition-opacity hover:opacity-80 disabled:opacity-40"
+              style={{ background: "rgba(255,255,255,0.15)", color: "white", border: "1px solid rgba(255,255,255,0.25)" }}
+              title="Regenerate this image with a new variation"
+            >
+              {isRegenerating ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
+              Regenerate
+            </button>
+            <a
+              href={img.url}
+              download={img.filename}
+              className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded transition-opacity hover:opacity-80"
+              style={{ background: "oklch(0.32 0.09 145)", color: "white" }}
+            >
+              <Download size={11} /> Download
+            </a>
+          </div>
+        </div>
+
+        {/* AI Prompt display */}
+        {img.prompt && (
+          <div
+            className="mt-3 rounded-lg p-3 text-xs leading-relaxed"
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.65)" }}
+          >
+            <span className="font-semibold uppercase tracking-wider text-white opacity-50 text-[10px] block mb-1">AI Prompt</span>
+            {img.prompt}
+          </div>
+        )}
+
+        {/* Thumbnail strip (when multiple images) */}
+        {images.length > 1 && (
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {images.map((thumb, i) => (
+              <button
+                key={i}
+                onClick={() => onNavigate(i)}
+                className="shrink-0 rounded overflow-hidden transition-all"
+                style={{
+                  width: 56,
+                  height: 42,
+                  outline: i === currentIndex ? "2px solid oklch(0.32 0.09 145)" : "2px solid transparent",
+                  opacity: i === currentIndex ? 1 : 0.55,
+                }}
+                aria-label={`Go to image ${i + 1}`}
+              >
+                {thumb.success ? (
+                  <img src={thumb.url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.08)" }}>
+                    <XCircle size={14} className="text-red-400" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ── Territory Select ──────────────────────────────────────────────────────────
@@ -60,102 +248,127 @@ function TerritorySelect({
 }
 
 // ── Image Result Card ─────────────────────────────────────────────────────────
-function ImageCard({ img }: { img: GeneratedImage }) {
-  const [lightboxOpen, setLightboxOpen] = React.useState(false);
-
+function ImageCard({
+  img,
+  onOpenLightbox,
+}: {
+  img: GeneratedImage;
+  onOpenLightbox: () => void;
+}) {
   return (
-    <>
-      {/* Lightbox overlay — rendered in-place, does not navigate away */}
-      {lightboxOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.88)" }}
-          onClick={() => setLightboxOpen(false)}
-        >
+    <div
+      className="rounded-lg border overflow-hidden"
+      style={{ borderColor: "oklch(0.88 0.012 80)", background: "oklch(1 0 0)" }}
+    >
+      {img.success ? (
+        <>
           <div
-            className="relative max-w-4xl w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
+            className="relative aspect-[4/3] bg-gray-100 cursor-zoom-in"
+            onClick={onOpenLightbox}
           >
-            <img
-              src={img.url}
-              alt={img.serviceLabel}
-              className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-2xl"
-            />
-            <div className="absolute top-3 left-3">
+            <img src={img.url} alt={img.serviceLabel} className="w-full h-full object-cover" />
+            <div className="absolute top-2 left-2">
               <Badge className="text-xs" style={{ background: "oklch(0.32 0.09 145)", color: "white" }}>
                 {img.serviceLabel}
               </Badge>
             </div>
-            <button
-              onClick={() => setLightboxOpen(false)}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
-              style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
-              aria-label="Close lightbox"
+            <div
+              className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+              style={{ background: "rgba(0,0,0,0.25)" }}
             >
-              <X size={16} />
-            </button>
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <p className="text-sm text-white opacity-80 truncate flex-1">{img.title}</p>
-              <a
-                href={img.url}
-                download={img.filename}
-                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded transition-opacity hover:opacity-80"
-                style={{ background: "oklch(0.32 0.09 145)", color: "white" }}
-              >
-                <Download size={11} /> Download
-              </a>
+              <ZoomIn size={28} color="white" />
             </div>
+          </div>
+          <div className="p-3 flex items-center justify-between gap-2">
+            <p className="text-xs truncate flex-1" style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}>
+              {img.title}
+            </p>
+            <a
+              href={img.url}
+              download={img.filename}
+              className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded transition-opacity hover:opacity-80"
+              style={{ background: "oklch(0.32 0.09 145)", color: "white", fontFamily: "Inter, sans-serif" }}
+            >
+              <Download size={11} /> Save
+            </a>
+          </div>
+        </>
+      ) : (
+        <div className="p-4 flex items-start gap-2">
+          <XCircle size={16} className="text-red-500 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-red-600">Generation failed</p>
+            <p className="text-xs mt-1" style={{ color: "oklch(0.52 0.016 80)" }}>{img.title}</p>
+            <p className="text-xs mt-1 text-red-400">{img.error}</p>
           </div>
         </div>
       )}
+    </div>
+  );
+}
 
-      <div
-        className="rounded-lg border overflow-hidden"
-        style={{ borderColor: "oklch(0.88 0.012 80)", background: "oklch(1 0 0)" }}
-      >
-        {img.success ? (
-          <>
-            <div
-              className="relative aspect-[4/3] bg-gray-100 cursor-zoom-in"
-              onClick={() => setLightboxOpen(true)}
-            >
-              <img src={img.url} alt={img.serviceLabel} className="w-full h-full object-cover" />
-              <div className="absolute top-2 left-2">
-                <Badge className="text-xs" style={{ background: "oklch(0.32 0.09 145)", color: "white" }}>
-                  {img.serviceLabel}
-                </Badge>
-              </div>
-              <div
-                className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-                style={{ background: "rgba(0,0,0,0.25)" }}
-              >
-                <ZoomIn size={28} color="white" />
-              </div>
-            </div>
-            <div className="p-3 flex items-center justify-between gap-2">
-              <p className="text-xs truncate flex-1" style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}>
-                {img.title}
-              </p>
-              <a
-                href={img.url}
-                download={img.filename}
-                className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded transition-opacity hover:opacity-80"
-                style={{ background: "oklch(0.32 0.09 145)", color: "white", fontFamily: "Inter, sans-serif" }}
-              >
-                <Download size={11} /> Save
-              </a>
-            </div>
-          </>
-        ) : (
-          <div className="p-4 flex items-start gap-2">
-            <XCircle size={16} className="text-red-500 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-red-600">Generation failed</p>
-              <p className="text-xs mt-1" style={{ color: "oklch(0.52 0.016 80)" }}>{img.title}</p>
-              <p className="text-xs mt-1 text-red-400">{img.error}</p>
-            </div>
-          </div>
-        )}
+// ── Image Gallery with shared lightbox ───────────────────────────────────────
+function ImageGallery({
+  images,
+  onImagesChange,
+}: {
+  images: GeneratedImage[];
+  onImagesChange: (updated: GeneratedImage[]) => void;
+}) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [regeneratingIndex, setRegeneratingIndex] = useState<number | null>(null);
+  const generateSingle = trpc.gbpImage.generateSingle.useMutation();
+
+  const handleRegenerate = async (index: number) => {
+    const img = images[index];
+    if (!img || !img.territory) {
+      toast.error("Cannot regenerate: missing territory data");
+      return;
+    }
+    setRegeneratingIndex(index);
+    try {
+      const result = await generateSingle.mutateAsync({
+        title: img.title,
+        body: img.body || "",
+        territory: img.territory,
+        suburb: img.suburb || "",
+      });
+      const updated = images.map((item, i) =>
+        i === index
+          ? { ...item, url: result.url, filename: result.filename, serviceLabel: result.serviceLabel, prompt: result.prompt, success: true, error: undefined }
+          : item
+      );
+      onImagesChange(updated);
+      toast.success("Image regenerated!");
+    } catch (err) {
+      toast.error("Regeneration failed: " + String(err));
+    } finally {
+      setRegeneratingIndex(null);
+    }
+  };
+
+  if (images.length === 0) return null;
+
+  return (
+    <>
+      {lightboxIndex !== null && (
+        <Lightbox
+          images={images}
+          currentIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+          onRegenerate={handleRegenerate}
+          regeneratingIndex={regeneratingIndex}
+        />
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {images.map((img, i) => (
+          <ImageCard
+            key={i}
+            img={img}
+            onOpenLightbox={() => setLightboxIndex(i)}
+          />
+        ))}
       </div>
     </>
   );
@@ -199,7 +412,7 @@ export default function GbpImageGenerator() {
   const [singleBody, setSingleBody] = useState("");
   const [singleTerritory, setSingleTerritory] = useState("");
   const [singleSuburb, setSingleSuburb] = useState("");
-  const [singleResult, setSingleResult] = useState<GeneratedImage | null>(null);
+  const [singleResults, setSingleResults] = useState<GeneratedImage[]>([]);
 
   // Bulk manual state
   const [bulkPosts, setBulkPosts] = useState<BulkPost[]>([
@@ -226,7 +439,6 @@ export default function GbpImageGenerator() {
     if (!singleTerritory) { toast.error("Please select a territory"); return; }
     setIsGenerating(true);
     setProgress({ current: 0, total: 1 });
-    setSingleResult(null);
     try {
       const result = await generateSingle.mutateAsync({
         title: singleTitle,
@@ -234,11 +446,24 @@ export default function GbpImageGenerator() {
         territory: singleTerritory,
         suburb: singleSuburb,
       });
-      setSingleResult({ ...result, title: singleTitle, success: true });
+      const newImg: GeneratedImage = {
+        ...result,
+        title: singleTitle,
+        territory: singleTerritory,
+        suburb: singleSuburb,
+        body: singleBody,
+        success: true,
+      };
+      setSingleResults((prev) => [newImg, ...prev]);
       setProgress({ current: 1, total: 1 });
       toast.success("Image generated!");
     } catch (err) {
-      setSingleResult({ url: "", filename: "", serviceLabel: "", title: singleTitle, success: false, error: String(err) });
+      const errImg: GeneratedImage = {
+        url: "", filename: "", serviceLabel: "", prompt: "",
+        title: singleTitle, territory: singleTerritory, suburb: singleSuburb, body: singleBody,
+        success: false, error: String(err),
+      };
+      setSingleResults((prev) => [errImg, ...prev]);
       toast.error("Generation failed");
     } finally {
       setIsGenerating(false);
@@ -260,7 +485,11 @@ export default function GbpImageGenerator() {
         url: r.url,
         filename: r.filename,
         serviceLabel: r.serviceLabel,
+        prompt: r.prompt,
         title: valid[i]?.title ?? "",
+        territory: valid[i]?.territory ?? "",
+        suburb: valid[i]?.suburb ?? "",
+        body: valid[i]?.body ?? "",
         success: r.success,
         error: r.error,
       }));
@@ -322,7 +551,11 @@ export default function GbpImageGenerator() {
         url: r.url,
         filename: r.filename,
         serviceLabel: r.serviceLabel,
+        prompt: r.prompt,
         title: valid[i]?.title ?? "",
+        territory: valid[i]?.territory ?? "",
+        suburb: valid[i]?.suburb ?? "",
+        body: valid[i]?.body ?? "",
         success: r.success,
         error: r.error,
       }));
@@ -347,22 +580,27 @@ export default function GbpImageGenerator() {
     setBulkPosts((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
   };
 
-  const allResults = [...(singleResult ? [singleResult] : []), ...bulkResults, ...csvResults];
-  const successResults = allResults.filter((r) => r.success);
+  const successResults = [...singleResults, ...bulkResults, ...csvResults].filter((r) => r.success);
 
   return (
     <PortalLayout>
       <div className="px-6 py-8 max-w-6xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="text-xs font-semibold tracking-widest uppercase mb-1" style={{ color: "oklch(0.42 0.09 145)", fontFamily: "Inter, sans-serif" }}>
-            Tools
+          <div
+            className="text-xs font-semibold tracking-widest uppercase mb-1"
+            style={{ color: "oklch(0.42 0.09 145)", fontFamily: "Inter, sans-serif" }}
+          >
+            GBP Tools
           </div>
-          <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "oklch(0.18 0.015 65)" }}>
+          <h1
+            className="text-3xl font-bold mb-2"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "oklch(0.18 0.015 65)" }}
+          >
             GBP Image Generator
           </h1>
           <p className="text-sm" style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}>
-            Generate branded Skedaddle images for Google Business Profile posts. Paste your post title and body — AI builds the perfect image prompt automatically.
+            Generate branded Skedaddle images for Google Business Profile posts using AI.
           </p>
           <div className="mt-3" style={{ borderTop: "2px solid oklch(0.32 0.09 145)", width: "48px" }} />
         </div>
@@ -370,17 +608,19 @@ export default function GbpImageGenerator() {
         {/* Progress bar */}
         {isGenerating && (
           <div className="mb-6 p-4 rounded-lg border" style={{ background: "oklch(0.97 0.012 80)", borderColor: "oklch(0.88 0.012 80)" }}>
-            <div className="flex items-center gap-3 mb-2">
-              <Loader2 size={16} className="animate-spin" style={{ color: "oklch(0.32 0.09 145)" }} />
-              <span className="text-sm font-medium" style={{ color: "oklch(0.32 0.09 145)", fontFamily: "Inter, sans-serif" }}>
-                Generating images... this takes about 10–15 seconds per image
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium" style={{ color: "oklch(0.32 0.09 145)" }}>
+                Generating images…
+              </span>
+              <span className="text-xs" style={{ color: "oklch(0.52 0.016 80)" }}>
+                {progress.current} / {progress.total}
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full rounded-full h-2" style={{ background: "oklch(0.88 0.012 80)" }}>
               <div
                 className="h-2 rounded-full transition-all duration-500"
                 style={{
-                  width: progress.total > 0 ? `${(progress.current / progress.total) * 100}%` : "10%",
+                  width: progress.total > 0 ? `${(progress.current / progress.total) * 100}%` : "0%",
                   background: "oklch(0.32 0.09 145)",
                 }}
               />
@@ -388,8 +628,8 @@ export default function GbpImageGenerator() {
           </div>
         )}
 
-        {/* Input tabs */}
-        <Tabs defaultValue="single" className="mb-8">
+        {/* Tabs */}
+        <Tabs defaultValue="single">
           <TabsList className="mb-6">
             <TabsTrigger value="single">Single Post</TabsTrigger>
             <TabsTrigger value="bulk">Bulk Manual</TabsTrigger>
@@ -404,36 +644,25 @@ export default function GbpImageGenerator() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="md:col-span-2">
-                  <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "oklch(0.52 0.016 80)" }}>
+                  <label className="text-xs font-semibold uppercase tracking-wider mb-1 block" style={{ color: "oklch(0.52 0.016 80)" }}>
                     Post Title *
                   </label>
                   <Input
-                    placeholder="e.g. Squirrel found nesting in Waukesha attic — humane removal by Skedaddle"
+                    placeholder="e.g. Squirrel found in attic — Waukesha homeowner"
                     value={singleTitle}
                     onChange={(e) => setSingleTitle(e.target.value)}
                     className="text-sm"
                   />
                 </div>
-                <div className="md:col-span-2">
-                  <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "oklch(0.52 0.016 80)" }}>
-                    Post Body (optional — more detail = better image)
-                  </label>
-                  <Textarea
-                    placeholder="A homeowner in Waukesha called us after hearing scratching in their attic. Our team discovered a grey squirrel had chewed through the soffit..."
-                    value={singleBody}
-                    onChange={(e) => setSingleBody(e.target.value)}
-                    className="text-sm min-h-[80px]"
-                  />
-                </div>
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "oklch(0.52 0.016 80)" }}>
+                  <label className="text-xs font-semibold uppercase tracking-wider mb-1 block" style={{ color: "oklch(0.52 0.016 80)" }}>
                     Territory *
                   </label>
                   <TerritorySelect value={singleTerritory} onChange={setSingleTerritory} territories={territories} />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "oklch(0.52 0.016 80)" }}>
-                    Suburb (optional)
+                  <label className="text-xs font-semibold uppercase tracking-wider mb-1 block" style={{ color: "oklch(0.52 0.016 80)" }}>
+                    Suburb
                   </label>
                   <Input
                     placeholder="e.g. Waukesha"
@@ -442,7 +671,19 @@ export default function GbpImageGenerator() {
                     className="text-sm"
                   />
                 </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider mb-1 block" style={{ color: "oklch(0.52 0.016 80)" }}>
+                    Post Body (optional)
+                  </label>
+                  <Textarea
+                    placeholder="Paste the post body here to help the AI generate a more relevant image…"
+                    value={singleBody}
+                    onChange={(e) => setSingleBody(e.target.value)}
+                    className="text-sm min-h-[80px]"
+                  />
+                </div>
               </div>
+
               <Button
                 onClick={handleSingleGenerate}
                 disabled={isGenerating}
@@ -453,9 +694,19 @@ export default function GbpImageGenerator() {
                 Generate Image
               </Button>
 
-              {singleResult && (
-                <div className="mt-6 max-w-sm">
-                  <ImageCard img={singleResult} />
+              {singleResults.length > 0 && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold" style={{ color: "oklch(0.18 0.015 65)" }}>
+                      Generated Images ({singleResults.filter((r) => r.success).length} succeeded)
+                    </h3>
+                    {singleResults.filter((r) => r.success).length > 1 && (
+                      <Button variant="outline" size="sm" className="text-xs flex items-center gap-1" onClick={() => downloadAllAsZip(singleResults)}>
+                        <Download size={11} /> Download All ZIP
+                      </Button>
+                    )}
+                  </div>
+                  <ImageGallery images={singleResults} onImagesChange={setSingleResults} />
                 </div>
               )}
             </div>
@@ -466,23 +717,23 @@ export default function GbpImageGenerator() {
             <div className="rounded-lg border p-6" style={{ borderColor: "oklch(0.88 0.012 80)", background: "oklch(1 0 0)" }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "oklch(0.18 0.015 65)" }}>
-                  Bulk Manual ({bulkPosts.length} post{bulkPosts.length !== 1 ? "s" : ""})
+                  Bulk Manual Entry
                 </h2>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={addBulkRow}
-                  className="flex items-center gap-1 text-xs"
+                  className="text-xs flex items-center gap-1"
                 >
-                  <Plus size={12} /> Add Row
+                  <Plus size={11} /> Add Row
                 </Button>
               </div>
 
               <div className="space-y-3 mb-4">
                 {bulkPosts.map((post, idx) => (
                   <div key={post.id} className="grid grid-cols-12 gap-2 items-start p-3 rounded-md" style={{ background: "oklch(0.97 0.008 80)" }}>
-                    <div className="col-span-1 pt-2 text-xs font-bold text-center" style={{ color: "oklch(0.65 0.010 80)" }}>
-                      {idx + 1}
+                    <div className="col-span-1 flex items-center justify-center pt-1.5">
+                      <span className="text-xs font-mono" style={{ color: "oklch(0.65 0.010 80)" }}>{idx + 1}</span>
                     </div>
                     <div className="col-span-4">
                       <Input
@@ -492,7 +743,7 @@ export default function GbpImageGenerator() {
                         className="text-xs h-8"
                       />
                     </div>
-                    <div className="col-span-3">
+                    <div className="col-span-4">
                       <TerritorySelect
                         value={post.territory}
                         onChange={(v) => updateBulkRow(post.id, "territory", v)}
@@ -552,9 +803,7 @@ export default function GbpImageGenerator() {
                       </Button>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {bulkResults.map((img, i) => <ImageCard key={i} img={img} />)}
-                  </div>
+                  <ImageGallery images={bulkResults} onImagesChange={setBulkResults} />
                 </div>
               )}
             </div>
@@ -676,9 +925,7 @@ export default function GbpImageGenerator() {
                       </Button>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {csvResults.map((img, i) => <ImageCard key={i} img={img} />)}
-                  </div>
+                  <ImageGallery images={csvResults} onImagesChange={setCsvResults} />
                 </div>
               )}
             </div>
@@ -686,11 +933,11 @@ export default function GbpImageGenerator() {
         </Tabs>
 
         {/* Info box */}
-        <div className="p-4 rounded-lg border text-sm" style={{ background: "oklch(0.97 0.012 80)", borderColor: "oklch(0.88 0.012 80)", color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}>
+        <div className="mt-6 p-4 rounded-lg border text-sm" style={{ background: "oklch(0.97 0.012 80)", borderColor: "oklch(0.88 0.012 80)", color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}>
           <div className="flex items-start gap-2">
             <ImageIcon size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.32 0.09 145)" }} />
             <div>
-              <strong style={{ color: "oklch(0.32 0.09 145)" }}>How it works:</strong> AI reads your post title and body, extracts the species, location, and scenario, then builds a tailored Flux Pro image prompt. Each image is generated at 1024×768 with a Skedaddle brand overlay. ~10–15 seconds per image via fal.ai.
+              <strong style={{ color: "oklch(0.32 0.09 145)" }}>How it works:</strong> AI reads your post title and body, extracts the species, location, and scenario, then builds a tailored Flux Pro image prompt. Each image is generated at 1024×768 with a Skedaddle brand overlay. ~10–15 seconds per image via fal.ai. Click any image to open the lightbox — use arrows to navigate, view the AI prompt, or regenerate a new variation.
             </div>
           </div>
         </div>

@@ -141,7 +141,7 @@ async function generateSingleImage(
   body: string,
   territory: string,
   suburb: string,
-): Promise<{ url: string; filename: string; serviceLabel: string }> {
+): Promise<{ url: string; filename: string; serviceLabel: string; prompt: string }> {
   const falKey = process.env.FAL_KEY;
   if (!falKey) throw new Error("FAL_KEY not configured");
 
@@ -185,7 +185,7 @@ async function generateSingleImage(
   const storageKey = `gbp-images/${filename}`;
   const { url: storedUrl } = await storagePut(storageKey, branded, "image/jpeg");
 
-  return { url: storedUrl, filename, serviceLabel };
+  return { url: storedUrl, filename, serviceLabel, prompt };
 }
 
 // ── tRPC Router ───────────────────────────────────────────────────────────────
@@ -239,6 +239,7 @@ export const gbpImageRouter = router({
         url: string;
         filename: string;
         serviceLabel: string;
+        prompt: string;
         success: boolean;
         error?: string;
       }> = [];
@@ -252,13 +253,14 @@ export const gbpImageRouter = router({
             post.territory,
             post.suburb,
           );
-          results.push({ index: i, ...result, success: true });
+          results.push({ index: i, url: result.url, filename: result.filename, serviceLabel: result.serviceLabel, prompt: result.prompt, success: true });
         } catch (err) {
           results.push({
             index: i,
             url: "",
             filename: "",
             serviceLabel: "",
+            prompt: "",
             success: false,
             error: String(err),
           });
