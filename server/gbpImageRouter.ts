@@ -247,13 +247,17 @@ function buildPromptFromFields(
     compositionDirective = `A ${speciesDesc} clearly visible and identifiable as the subject, positioned in the mid-ground of the frame. A Skedaddle wildlife technician in a teal polo shirt is ${actionFraming}, at a ${scene}. The technician is working on the building structure and is NOT touching or holding the animal. The ${species} is sharp with shallow depth of field separating it from the background`;
   }
 
+  // CRITICAL: Repeat species name multiple times and put it first for Flux Pro adherence
+  const speciesName = species.toLowerCase();
   const prompt = [
+    `A ${speciesName}. This image MUST show a ${speciesDesc}.`,
     `Professional DSLR photograph, ${compositionDirective}.`,
     `Location: ${suburbText}, ${cityState}, realistic suburban residential neighborhood.`,
     `${lighting}.`,
     `The technician is working on the building structure, ${action}. The technician does not touch or hold the animal at any point.`,
+    `The animal in this photo is specifically a ${speciesName}, showing its key identifying features clearly.`,
     `Photorealistic, well-composed, natural candid moment, editorial quality wildlife control documentation photography.`,
-    `Shot on Canon EOS R5, 85mm f/1.8, natural light, sharp focus on the animal.`,
+    `Shot on Canon EOS R5, 85mm f/1.8, natural light, sharp focus on the ${speciesName}.`,
   ].join(" ");
 
   return prompt;
@@ -475,10 +479,12 @@ async function generateSingleImage(
 
   // #3: Vision QA check — retry up to 2 times for species accuracy
   const needsQA = QA_REQUIRED_ANIMALS.some(a => fields.species.toLowerCase().includes(a));
+  console.log(`[GBP] Species: ${fields.species}, needsQA: ${needsQA}, sizeClass: ${fields.sizeClass}`);
   if (needsQA) {
     const speciesDesc = getSpeciesDescription(fields.species);
     for (let attempt = 0; attempt < 2; attempt++) {
       const passed = await visionQACheck(imageUrl, fields.species);
+      console.log(`[GBP] QA attempt ${attempt}: passed=${passed} for species=${fields.species}`);
       if (passed) break;
       // Retry with increasingly specific prompt
       const retryPrompt = attempt === 0
@@ -505,14 +511,20 @@ async function generateSingleImage(
 
   const resp = await fetch(imageUrl);
   const rawBuffer = Buffer.from(await resp.arrayBuffer());
+  const rawMeta = await sharp(rawBuffer).metadata();
+  console.log(`[GBP] Raw image from fal: ${rawMeta.width}x${rawMeta.height}`);
 
   // Enforce exact 1200x900 dimensions regardless of what the model returns
   const resizedBuffer = await sharp(rawBuffer)
     .resize(1200, 900, { fit: "cover", position: "center" })
     .jpeg({ quality: 95 })
     .toBuffer();
+  const resizedMeta = await sharp(resizedBuffer).metadata();
+  console.log(`[GBP] After resize: ${resizedMeta.width}x${resizedMeta.height}`);
 
   const branded = await addBrandOverlay(resizedBuffer, serviceLabel, cityState);
+  const brandedMeta = await sharp(branded).metadata();
+  console.log(`[GBP] After overlay: ${brandedMeta.width}x${brandedMeta.height}`);
 
   // #2: Collision-safe filename with content hash
   const hash8 = contentHash8(title, body, territory, suburb);
