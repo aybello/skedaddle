@@ -329,44 +329,59 @@ Answer with JSON:
   }
 }
 
-// ── #7: Add brand overlay using sharp + SVG ─────────────────────────────────
-// Logo overlay: composites the real PNG logo if available, otherwise uses text.
+// ── #7: Add brand overlay using sharp's Pango text rendering ────────────────
+// Uses sharp's built-in text() method which renders via Pango/fontconfig.
+// This is font-independent — works on any server without requiring specific fonts.
 async function addBrandOverlay(
   imageBuffer: Buffer,
   serviceLabel: string,
   cityState: string,
 ): Promise<Buffer> {
   const meta = await sharp(imageBuffer).metadata();
-  const W = meta.width ?? 1024;
-  const H = meta.height ?? 768;
+  const W = meta.width ?? 1200;
+  const H = meta.height ?? 900;
   const barH = Math.round(H * 0.14);
   const barY = H - barH;
   const textX = Math.round(W * 0.04);
-  const textY = barY + Math.round(barH * 0.18);
   const fontSize = Math.round(H * 0.045);
   const fontSizeSmall = Math.round(H * 0.032);
 
-  // Build the SVG overlay (teal bar + service label + city)
-  // Use "DejaVu Sans" which is available on Linux servers, with sans-serif fallback
-  const fontFamily = "DejaVu Sans, Noto Sans, Liberation Sans, sans-serif";
-  // Brand mark is either the logo PNG (composited separately) or text fallback
-  const brandTextSvg = logoPngBuffer
-    ? "" // Logo will be composited as a separate layer
-    : (() => {
-        const brandFontSize = Math.round(H * 0.038);
-        const brandX = W - Math.round(W * 0.04);
-        const brandY = barY + Math.round(barH * 0.55);
-        return `<text x="${brandX}" y="${brandY}" font-family="${fontFamily}" font-size="${brandFontSize}" font-weight="bold" fill="white" text-anchor="end">Skedaddle</text>`;
-      })();
+  // Create the teal bar as a separate RGBA buffer
+  const tealBar = await sharp({
+    create: { width: W, height: barH, channels: 4, background: { r: 1, g: 105, b: 111, alpha: 217 } },
+  }).png().toBuffer();
 
-  const svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0" y="${barY}" width="${W}" height="${barH}" fill="rgba(1,105,111,0.85)" rx="0"/>
-    <text x="${textX}" y="${textY + fontSize}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="bold" fill="white">${escapeXml(serviceLabel)}</text>
-    <text x="${textX}" y="${textY + fontSize + fontSizeSmall + 4}" font-family="${fontFamily}" font-size="${fontSizeSmall}" fill="rgba(200,235,235,0.9)">${escapeXml(cityState)}</text>
-    ${brandTextSvg}
-  </svg>`;
+  // Render service label text using Pango (font-independent)
+  const serviceLabelBuf = await sharp({
+    text: {
+      text: `<span foreground="white" font_desc="Sans Bold ${fontSize}">${escapePango(serviceLabel)}</span>`,
+      dpi: 72,
+      rgba: true,
+    },
+  }).png().toBuffer();
+  const serviceMeta = await sharp(serviceLabelBuf).metadata();
 
-  // If real logo PNG is available, resize and composite it alongside the SVG overlay
+  // Render city/state text
+  const cityBuf = await sharp({
+    text: {
+      text: `<span foreground="#C8EBEB" font_desc="Sans ${fontSizeSmall}">${escapePango(cityState)}</span>`,
+      dpi: 72,
+      rgba: true,
+    },
+  }).png().toBuffer();
+
+  // Calculate text positions within the bar
+  const textYBase = barY + Math.round(barH * 0.22);
+  const serviceHeight = serviceMeta.height ?? fontSize;
+
+  // Build composite layers
+  const composites: Array<{ input: Buffer; top: number; left: number; blend: "over" }> = [
+    { input: tealBar, top: barY, left: 0, blend: "over" },
+    { input: serviceLabelBuf, top: textYBase, left: textX, blend: "over" },
+    { input: cityBuf, top: textYBase + serviceHeight + 6, left: textX, blend: "over" },
+  ];
+
+  // Brand mark: either the real logo PNG or rendered "Skedaddle" text
   if (logoPngBuffer) {
     const logoHeight = Math.round(barH * 0.6);
     const resizedLogo = await sharp(logoPngBuffer)
@@ -376,22 +391,33 @@ async function addBrandOverlay(
     const logoWidth = logoMeta.width ?? logoHeight * 3;
     const logoLeft = W - Math.round(W * 0.04) - logoWidth;
     const logoTop = barY + Math.round((barH - logoHeight) / 2);
-    return await sharp(imageBuffer)
-      .composite([
-        { input: Buffer.from(svg), blend: "over" },
-        { input: resizedLogo, top: logoTop, left: logoLeft, blend: "over" },
-      ])
-      .jpeg({ quality: 92 })
-      .toBuffer();
+    composites.push({ input: resizedLogo, top: logoTop, left: logoLeft, blend: "over" });
+  } else {
+    // Render "Skedaddle" brand text
+    const brandFontSize = Math.round(H * 0.038);
+    const brandBuf = await sharp({
+      text: {
+        text: `<span foreground="white" font_desc="Sans Bold ${brandFontSize}">Skedaddle</span>`,
+        dpi: 72,
+        rgba: true,
+      },
+    }).png().toBuffer();
+    const brandMeta = await sharp(brandBuf).metadata();
+    const brandWidth = brandMeta.width ?? 150;
+    const brandHeight = brandMeta.height ?? brandFontSize;
+    const brandLeft = W - Math.round(W * 0.04) - brandWidth;
+    const brandTop = barY + Math.round((barH - brandHeight) / 2);
+    composites.push({ input: brandBuf, top: brandTop, left: brandLeft, blend: "over" });
   }
 
   return await sharp(imageBuffer)
-    .composite([{ input: Buffer.from(svg), blend: "over" }])
+    .composite(composites)
     .jpeg({ quality: 92 })
     .toBuffer();
 }
 
-function escapeXml(str: string): string {
+// Escape text for Pango markup (XML-like)
+function escapePango(str: string): string {
   return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -447,14 +473,17 @@ async function generateSingleImage(
     imageUrl = result.data.images[0].url;
   }
 
-  // #3: Vision QA check — retry once for small/hard-to-render animals if species not visible
+  // #3: Vision QA check — retry up to 2 times for species accuracy
   const needsQA = QA_REQUIRED_ANIMALS.some(a => fields.species.toLowerCase().includes(a));
   if (needsQA) {
-    const passed = await visionQACheck(imageUrl, fields.species);
-    if (!passed) {
-      // Retry with a strengthened prompt emphasizing the animal with species-specific description
-      const speciesDesc = getSpeciesDescription(fields.species);
-      const retryPrompt = `Close-up wildlife photograph: a ${speciesDesc} clearly visible in the foreground, sitting on a surface or inside a humane wire live-trap, sharp focus on the animal showing its distinctive features. The animal is NOT being held or touched by anyone. Behind in soft bokeh: a Skedaddle wildlife technician in teal polo working on a suburban home in ${cityState}. Photorealistic, Canon EOS R5, 85mm f/1.8, natural light. Shot on location in ${suburb || cityState}.`;
+    const speciesDesc = getSpeciesDescription(fields.species);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const passed = await visionQACheck(imageUrl, fields.species);
+      if (passed) break;
+      // Retry with increasingly specific prompt
+      const retryPrompt = attempt === 0
+        ? `Close-up wildlife photograph: a ${speciesDesc} clearly visible in the center foreground, occupying at least 30% of the frame. The animal is sitting on the ground near a suburban home foundation. Sharp focus on the animal showing its distinctive features. The animal is NOT being held or touched by anyone. Behind in soft bokeh: a Skedaddle wildlife technician in teal polo shirt inspecting the home exterior in ${cityState}. Photorealistic, Canon EOS R5, 85mm f/1.8, golden hour natural light.`
+        : `Extreme close-up nature photograph of a single ${speciesDesc}. The animal fills most of the frame, photographed at eye level in a suburban backyard setting. Ultra-sharp detail on fur/feathers and distinctive markings. No humans visible. Shallow depth of field, background is a blurred residential home. Shot in ${suburb || cityState}. Photorealistic, Nikon Z9, 105mm macro lens, f/2.8.`;
       try {
         const retryResult = await fal.subscribe("fal-ai/flux-pro", {
           input: {
@@ -468,14 +497,22 @@ async function generateSingleImage(
         }) as unknown as { data: { images: Array<{ url: string }> }; requestId: string };
         imageUrl = retryResult.data.images[0].url;
       } catch {
-        // If retry fails, use the original image
+        // If retry fails, keep the current image and break
+        break;
       }
     }
   }
 
   const resp = await fetch(imageUrl);
   const rawBuffer = Buffer.from(await resp.arrayBuffer());
-  const branded = await addBrandOverlay(rawBuffer, serviceLabel, cityState);
+
+  // Enforce exact 1200x900 dimensions regardless of what the model returns
+  const resizedBuffer = await sharp(rawBuffer)
+    .resize(1200, 900, { fit: "cover", position: "center" })
+    .jpeg({ quality: 95 })
+    .toBuffer();
+
+  const branded = await addBrandOverlay(resizedBuffer, serviceLabel, cityState);
 
   // #2: Collision-safe filename with content hash
   const hash8 = contentHash8(title, body, territory, suburb);
