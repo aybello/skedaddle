@@ -432,6 +432,49 @@ export default function GbpImageGenerator() {
 
   const generateSingle = trpc.gbpImage.generateSingle.useMutation();
   const generateBulk = trpc.gbpImage.generateBulk.useMutation();
+  const trpcUtils = trpc.useUtils();
+
+  // ── Poll job status helper ────────────────────────────────────────────────
+  const pollJobStatus = async (
+    jobId: string,
+    validPosts: BulkPost[],
+    setResults: (imgs: GeneratedImage[]) => void,
+  ) => {
+    const poll = async (): Promise<void> => {
+      const status = await trpcUtils.gbpImage.getJobStatus.fetch({ jobId });
+      if (!status.found) {
+        toast.error("Job not found");
+        setIsGenerating(false);
+        return;
+      }
+      setProgress({ current: status.completed, total: status.total });
+
+      if (status.status === "running" || (status.status === "completed" && status.completed < status.total)) {
+        // Still running — poll again in 2s
+        await new Promise((r) => setTimeout(r, 2000));
+        return poll();
+      }
+
+      // Done — map results
+      const mapped: GeneratedImage[] = status.results.map((r: { url: string; filename: string; serviceLabel: string; prompt: string; success: boolean; error?: string; index: number }, i: number) => ({
+        url: r.url,
+        filename: r.filename,
+        serviceLabel: r.serviceLabel,
+        prompt: r.prompt,
+        title: validPosts[r.index]?.title ?? validPosts[i]?.title ?? "",
+        territory: validPosts[r.index]?.territory ?? validPosts[i]?.territory ?? "",
+        suburb: validPosts[r.index]?.suburb ?? validPosts[i]?.suburb ?? "",
+        body: validPosts[r.index]?.body ?? validPosts[i]?.body ?? "",
+        success: r.success,
+        error: r.error,
+      }));
+      setResults(mapped);
+      const successCount = mapped.filter((r) => r.success).length;
+      toast.success(`${successCount} of ${mapped.length} images generated`);
+      setIsGenerating(false);
+    };
+    await poll();
+  };
 
   // ── Single Post Handler ───────────────────────────────────────────────────
   const handleSingleGenerate = async () => {
@@ -478,27 +521,12 @@ export default function GbpImageGenerator() {
     setProgress({ current: 0, total: valid.length });
     setBulkResults([]);
     try {
-      const result = await generateBulk.mutateAsync({
+      const { jobId } = await generateBulk.mutateAsync({
         posts: valid.map((p) => ({ title: p.title, body: p.body, territory: p.territory, suburb: p.suburb })),
       });
-      const mapped: GeneratedImage[] = result.results.map((r, i) => ({
-        url: r.url,
-        filename: r.filename,
-        serviceLabel: r.serviceLabel,
-        prompt: r.prompt,
-        title: valid[i]?.title ?? "",
-        territory: valid[i]?.territory ?? "",
-        suburb: valid[i]?.suburb ?? "",
-        body: valid[i]?.body ?? "",
-        success: r.success,
-        error: r.error,
-      }));
-      setBulkResults(mapped);
-      const successCount = mapped.filter((r) => r.success).length;
-      toast.success(`${successCount} of ${mapped.length} images generated`);
+      await pollJobStatus(jobId, valid, setBulkResults);
     } catch (err) {
       toast.error("Bulk generation failed: " + String(err));
-    } finally {
       setIsGenerating(false);
     }
   };
@@ -544,27 +572,12 @@ export default function GbpImageGenerator() {
     setProgress({ current: 0, total: valid.length });
     setCsvResults([]);
     try {
-      const result = await generateBulk.mutateAsync({
+      const { jobId } = await generateBulk.mutateAsync({
         posts: valid.map((p) => ({ title: p.title, body: p.body, territory: p.territory, suburb: p.suburb })),
       });
-      const mapped: GeneratedImage[] = result.results.map((r, i) => ({
-        url: r.url,
-        filename: r.filename,
-        serviceLabel: r.serviceLabel,
-        prompt: r.prompt,
-        title: valid[i]?.title ?? "",
-        territory: valid[i]?.territory ?? "",
-        suburb: valid[i]?.suburb ?? "",
-        body: valid[i]?.body ?? "",
-        success: r.success,
-        error: r.error,
-      }));
-      setCsvResults(mapped);
-      const successCount = mapped.filter((r) => r.success).length;
-      toast.success(`${successCount} of ${mapped.length} images generated`);
+      await pollJobStatus(jobId, valid, setCsvResults);
     } catch (err) {
       toast.error("Generation failed: " + String(err));
-    } finally {
       setIsGenerating(false);
     }
   };

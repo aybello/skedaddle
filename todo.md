@@ -44,3 +44,12 @@
 ## Pending
 - [ ] Remaining 15 territory strategy reports (Minneapolis, Coquitlam, Baltimore, etc.)
 - [ ] Logo overlay once Skedaddle logo PNG is provided
+
+## Production Readiness (Review Brief — July 2026)
+- [x] #1 Bulk generation job/poll pattern (fal queue API + p-limit concurrency + idempotency)
+- [x] #2 Filename collision fix (content hash suffix)
+- [x] #3 Vision-QA retry loop (vision model checks small-animal presence, retries once if missing)
+- [x] #4 Structured-intermediate prompt builder (LLM extracts fields → deterministic template assembles prompt)
+- [x] #5 Model upgrade (Claude 3.5 Haiku → best available Haiku on built-in API)
+- [x] #6 Interim prompt rewrite (no negatives, balanced composition, depth-of-field, small-animal foreground)
+- [x] #7 Logo overlay prep + minor code fixes (stray space, GBP sizing, flux-pro version check)

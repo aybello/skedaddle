@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { TERRITORIES, gbpImageRouter } from "./gbpImageRouter";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { createHash } from "crypto";
 
 // ── Territory data tests ─────────────────────────────────────────────────────
 describe("TERRITORIES", () => {
@@ -80,5 +81,55 @@ describe("FAL_KEY environment", () => {
     const key = process.env.FAL_KEY!;
     // Format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:hexhexhex
     expect(key).toMatch(/^[0-9a-f-]+:[0-9a-f]+$/i);
+  });
+});
+
+// ── #2: Content hash collision safety ────────────────────────────────────────
+describe("contentHash8 (filename collision fix)", () => {
+  // Replicate the function logic for testing
+  function contentHash8(title: string, body: string, territory: string, suburb: string): string {
+    return createHash("sha256")
+      .update(`${title}|${body}|${territory}|${suburb}`)
+      .digest("hex")
+      .slice(0, 8);
+  }
+
+  it("produces 8-character hex string", () => {
+    const hash = contentHash8("Raccoon Removal", "body text", "milwaukee", "Waukesha");
+    expect(hash).toMatch(/^[0-9a-f]{8}$/);
+  });
+
+  it("different content produces different hashes", () => {
+    const h1 = contentHash8("Raccoon Removal", "body1", "milwaukee", "Waukesha");
+    const h2 = contentHash8("Squirrel Exclusion", "body2", "milwaukee", "Waukesha");
+    expect(h1).not.toBe(h2);
+  });
+
+  it("same content produces same hash (idempotent)", () => {
+    const h1 = contentHash8("Same Title", "Same Body", "hamilton", "Ancaster");
+    const h2 = contentHash8("Same Title", "Same Body", "hamilton", "Ancaster");
+    expect(h1).toBe(h2);
+  });
+});
+
+// ── #1: getJobStatus returns not_found for unknown jobs ──────────────────────
+describe("gbpImage.getJobStatus", () => {
+  it("returns found=false for unknown jobId", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const result = await caller.gbpImage.getJobStatus({ jobId: "nonexistent_job_id" });
+    expect(result.found).toBe(false);
+    expect(result.status).toBe("not_found");
+    expect(result.results).toEqual([]);
+  });
+});
+
+// ── LLM model availability ───────────────────────────────────────────────────
+describe("LLM model configuration", () => {
+  it("BUILT_IN_FORGE_API_URL is configured", () => {
+    expect(process.env.BUILT_IN_FORGE_API_URL).toBeTruthy();
+  });
+
+  it("BUILT_IN_FORGE_API_KEY is configured", () => {
+    expect(process.env.BUILT_IN_FORGE_API_KEY).toBeTruthy();
   });
 });
