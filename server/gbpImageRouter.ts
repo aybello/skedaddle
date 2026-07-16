@@ -239,9 +239,9 @@ function buildPromptFromFields(
 
   // Season-specific lighting
   const seasonLighting: Record<string, string> = {
-    spring: "soft overcast spring light, fresh green foliage in background",
-    summer: "warm golden-hour light, green leafy trees",
-    fall: "warm autumn light, orange and yellow foliage",
+    spring: "soft overcast spring light, fresh green foliage",
+    summer: "warm golden-hour summer light, lush green trees",
+    fall: "warm autumn light, colorful fall foliage",
     winter: "cool crisp winter light, bare branches",
   };
   const lighting = seasonLighting[season.toLowerCase()] || seasonLighting.summer;
@@ -250,95 +250,94 @@ function buildPromptFromFields(
   const speciesDesc = getSpeciesDescription(species);
   const speciesName = species.toLowerCase();
 
-  // NEW STRATEGY: Generate realistic single-subject photos.
-  // Real wildlife control photos show ONE of these scenarios:
-  //   A) The animal in its natural context (peeking from soffit, on roof, near entry point)
-  //   B) The technician working on the structure (no animal visible)
-  // We pick scenario A (animal-focused) because it's more engaging for GBP.
-  // The key: show the animal doing what it actually does — NOT posed with a human.
+  // STRATEGY: Realistic wildlife control job photos.
+  // The technician and animal are in the SAME frame — this is what real job photos look like.
+  // The tech is working at/near the entry point. The animal is visible nearby.
+  // The tech's hands are on tools/building materials — not grabbing the animal.
+  // Think: "coworker took this photo on their phone during the job."
 
-  // Scene contexts that feel real (animal caught in the act)
-  const animalScenes: Record<string, string[]> = {
+  // Realistic job scenarios per species (tech + animal in same frame)
+  const jobScenes: Record<string, string[]> = {
     raccoon: [
-      "peeking out from a gap in a residential soffit, face partially visible through the opening",
-      "sitting on a residential rooftop at dusk near a damaged roof vent",
-      "climbing down a downspout on the side of a suburban home",
-      "looking out from under a backyard deck through the lattice",
+      "A wildlife technician in a teal polo shirt kneeling on a residential roof, installing steel mesh over a soffit gap. A raccoon with black mask markings and ringed tail is peeking out from the adjacent soffit opening, watching the technician work",
+      "A wildlife technician in a teal polo shirt on a ladder inspecting a damaged roof vent on a suburban home. A raccoon is visible sitting on the roof ridge nearby, looking at the technician",
+      "A wildlife technician in a teal polo shirt installing a one-way exclusion door on a chimney cap. A raccoon is climbing out of the chimney opening as the device is being fitted",
+      "A wildlife technician in a teal polo shirt crouching beside a backyard deck, shining a flashlight underneath. A raccoon's face is visible under the deck, eyes reflecting the light",
     ],
     squirrel: [
-      "perched on a residential roof edge next to a chewed soffit vent",
-      "sitting on a tree branch very close to a home's roofline",
-      "peeking out of a small gap in a home's fascia board",
-      "on a suburban backyard fence near a house",
+      "A wildlife technician in a teal polo shirt on a ladder, screwing steel mesh over a chewed hole in a home's fascia board. A grey squirrel is perched on a nearby tree branch watching",
+      "A wildlife technician in a teal polo shirt on a residential roof, replacing a damaged plastic vent with a metal one. A squirrel is sitting on the gutter edge a few feet away",
+      "A wildlife technician in a teal polo shirt inspecting attic insulation with a flashlight. A squirrel is visible in the corner of the attic near its nest of shredded material",
+      "A wildlife technician in a teal polo shirt installing a one-way door over a gap in a home's soffit. A squirrel is on the roof nearby, looking at the work being done",
     ],
     bat: [
-      "a cluster of small brown bats hanging from attic rafters in dim light",
-      "a single bat clinging to the exterior brick wall of a home near a vent",
-      "a bat in flight silhouetted against a dusky suburban sky near roofline",
-      "several bats roosting in a narrow gap between roof shingles and fascia",
+      "A wildlife technician in a teal polo shirt on a ladder at dusk, installing fine mesh exclusion netting over a gap between roof shingles and fascia. Several small brown bats are visible emerging from the gap",
+      "A wildlife technician in a teal polo shirt in a dim attic space, pointing a flashlight at a cluster of small brown bats hanging from the rafters overhead",
+      "A wildlife technician in a teal polo shirt on a ladder inspecting the exterior of a brick building at twilight. A bat is clinging to the wall near a vent opening",
+      "A wildlife technician in a teal polo shirt installing a bat valve (one-way exit device) over a gap in a home's soffit. Bats are visible roosting in the gap behind the device",
     ],
     skunk: [
-      "a skunk walking across a suburban backyard lawn at dusk",
-      "a skunk partially visible under a garden shed, peeking out",
-      "a skunk near a home's foundation wall, sniffing at a gap",
-      "a skunk on a residential driveway near garbage bins",
+      "A wildlife technician in a teal polo shirt crouching near a home's foundation, installing a one-way exclusion door at a gap under the porch. A black and white striped skunk is visible under the porch watching",
+      "A wildlife technician in a teal polo shirt kneeling beside a garden shed, digging a trench to install underground mesh. A striped skunk is walking away across the lawn nearby",
+      "A wildlife technician in a teal polo shirt with a flashlight, inspecting under a residential deck. A skunk with distinctive black fur and white stripe is visible underneath",
+      "A wildlife technician in a teal polo shirt sealing a foundation gap with steel mesh. A skunk is visible nearby on the lawn, watching from a safe distance",
     ],
     mouse: [
-      "a small house mouse on a kitchen counter near a wall gap",
-      "a mouse peeking out from a hole in drywall near a baseboard",
-      "a mouse sitting on insulation in an attic space",
-      "a mouse near a foundation crack on the exterior of a home",
+      "A wildlife technician in a teal polo shirt crouching at a home's foundation, sealing a small crack with steel wool and caulk. A tiny house mouse is visible peeking out from a nearby gap in the siding",
+      "A wildlife technician in a teal polo shirt in a garage, inspecting insulation along the wall. A small mouse is visible sitting on a shelf nearby",
+      "A wildlife technician in a teal polo shirt installing a metal kick plate at the base of a door. A mouse is visible near the corner of the room",
+      "A wildlife technician in a teal polo shirt checking a monitoring station placed along a garage wall. A small mouse is visible near the baseboard",
     ],
     mice: [
-      "a small house mouse on a kitchen counter near a wall gap",
-      "a mouse peeking out from a hole in drywall near a baseboard",
-      "a mouse sitting on insulation in an attic space",
-      "a mouse near a foundation crack on the exterior of a home",
+      "A wildlife technician in a teal polo shirt crouching at a home's foundation, sealing a small crack with steel wool and caulk. A tiny house mouse is visible peeking out from a nearby gap in the siding",
+      "A wildlife technician in a teal polo shirt in a garage, inspecting insulation along the wall. A small mouse is visible sitting on a shelf nearby",
+      "A wildlife technician in a teal polo shirt installing a metal kick plate at the base of a door. A mouse is visible near the corner of the room",
+      "A wildlife technician in a teal polo shirt checking a monitoring station placed along a garage wall. A small mouse is visible near the baseboard",
     ],
     bird: [
-      "a bird nesting in a residential dryer vent opening",
-      "a bird perched on a suburban home's gutter with nesting material",
-      "a bird's nest visible inside a bathroom exhaust vent on a house exterior",
-      "a starling sitting at the entrance of a gap in a home's soffit",
+      "A wildlife technician in a teal polo shirt on a ladder, installing a bird-proof vent cover over a dryer vent. A bird is perched on the gutter nearby with nesting material in its beak",
+      "A wildlife technician in a teal polo shirt inspecting a bathroom exhaust vent on the exterior of a home. A bird's nest is visible inside the vent opening",
+      "A wildlife technician in a teal polo shirt on a roof, fitting mesh over a gap where birds have been entering. A starling is sitting on the roof ridge watching",
+      "A wildlife technician in a teal polo shirt carefully removing old nesting material from a vent opening. A bird is perched on a nearby branch watching",
     ],
     chipmunk: [
-      "a chipmunk sitting on a residential porch step near a foundation gap",
-      "a chipmunk peeking out from a hole in a garden retaining wall",
-      "a chipmunk on a suburban sidewalk near a home's foundation",
-      "a chipmunk near a downspout base beside a residential home",
+      "A wildlife technician in a teal polo shirt kneeling at a front porch, installing mesh along the foundation. A chipmunk with brown stripes is sitting on the porch step nearby",
+      "A wildlife technician in a teal polo shirt digging a shallow trench beside a home's foundation to install exclusion mesh. A chipmunk is peeking out from a hole in the garden nearby",
+      "A wildlife technician in a teal polo shirt sealing gaps around a home's downspout base. A chipmunk is perched on a nearby retaining wall watching",
+      "A wildlife technician in a teal polo shirt inspecting burrow holes near a residential walkway. A chipmunk is visible sitting upright near one of the holes",
     ],
     groundhog: [
-      "a groundhog sitting upright in a suburban backyard near its burrow entrance",
-      "a groundhog peeking out from under a garden shed",
-      "a groundhog in a residential vegetable garden near a fence",
-      "a groundhog near the foundation of a suburban home",
+      "A wildlife technician in a teal polo shirt installing an L-shaped wire mesh barrier along a garden fence line. A groundhog is sitting upright in the yard nearby, watching",
+      "A wildlife technician in a teal polo shirt kneeling beside a shed, installing a one-way door at a burrow entrance. A groundhog is visible near the edge of the yard",
+      "A wildlife technician in a teal polo shirt digging a trench for underground exclusion fencing. A groundhog is peeking out from its burrow hole a few feet away",
+      "A wildlife technician in a teal polo shirt inspecting groundhog damage to a residential garden. A groundhog is visible sitting at the far end of the yard",
     ],
     opossum: [
-      "an opossum on a residential fence at night, caught in a motion-sensor light",
-      "an opossum under a suburban deck, visible through the lattice",
-      "an opossum near a home's garbage area at dusk",
-      "an opossum climbing a residential downspout",
+      "A wildlife technician in a teal polo shirt on a ladder, installing mesh over a gap under a home's eaves. An opossum with grey fur and a pink nose is visible on a nearby tree branch",
+      "A wildlife technician in a teal polo shirt crouching beside a deck, installing a one-way door. An opossum is visible underneath the deck looking out",
+      "A wildlife technician in a teal polo shirt shining a flashlight under a porch at night. An opossum's face is visible in the beam of light",
+      "A wildlife technician in a teal polo shirt sealing gaps along a home's foundation. An opossum is visible walking along the fence line in the background",
     ],
     snake: [
-      "a snake coiled near a home's foundation vent",
-      "a snake on a suburban garden path near a house",
-      "a snake visible in a basement window well",
-      "a snake near a gap in a home's exterior siding",
+      "A wildlife technician in a teal polo shirt sealing a gap in a home's foundation with expanding foam. A snake is visible coiled near the base of the wall",
+      "A wildlife technician in a teal polo shirt installing mesh over a basement window well. A snake is visible inside the window well",
+      "A wildlife technician in a teal polo shirt inspecting the exterior siding of a home. A snake is visible in the garden bed below",
+      "A wildlife technician in a teal polo shirt checking a gap under a garage door. A snake is visible nearby on the driveway",
     ],
   };
 
-  // Pick a random scene for this species, or use a generic one
-  const speciesScenes = animalScenes[speciesName] || animalScenes["raccoon"];
+  // Pick a random job scene for this species
+  const speciesScenes = jobScenes[speciesName] || jobScenes["raccoon"];
   const randomScene = speciesScenes[Math.floor(Math.random() * speciesScenes.length)];
 
-  // Build a simple, focused prompt that looks like a real photo
+  // Build a natural-looking prompt
   const prompt = [
-    `Photograph of ${speciesDesc}, ${randomScene}.`,
-    `Suburban residential neighborhood in ${suburbText}, ${cityState}.`,
+    `${randomScene}.`,
+    `Suburban residential home in ${suburbText}, ${cityState}.`,
     `${lighting}.`,
-    `Realistic iPhone photo taken by a homeowner or wildlife technician documenting the situation.`,
-    `Natural lighting, slightly imperfect framing like a real candid photo. No studio lighting. No posing.`,
-    `The image looks like it was taken quickly to document a real wildlife situation at a home.`,
+    `The technician's hands are holding tools or working on building materials only. The animal is nearby but not being touched or held.`,
+    `Candid photo taken by a coworker on a phone during the job. Natural lighting, realistic, not posed or staged.`,
+    `The ${speciesName} is clearly identifiable as a ${speciesDesc}.`,
   ].join(" ");
 
   return prompt;
