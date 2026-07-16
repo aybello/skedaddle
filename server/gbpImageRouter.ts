@@ -162,7 +162,7 @@ Return JSON with these fields:
 - serviceLabel: short label for the service (e.g. "Raccoon Removal", "Squirrel Exclusion", "Bat Exclusion", "Mouse Removal")`;
 
   const result = await invokeLLM({
-    model: "claude-haiku-4-5",
+    model: "gpt-5-mini",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: `Title: ${title}\n\nBody: ${body || "(no body provided)"}` },
@@ -171,6 +171,7 @@ Return JSON with these fields:
       type: "json_schema" as const,
       json_schema: {
         name: "extracted_fields",
+        strict: true,
         schema: {
           type: "object",
           properties: {
@@ -184,10 +185,10 @@ Return JSON with these fields:
           required: ["species", "sizeClass", "action", "scene", "season", "serviceLabel"],
           additionalProperties: false,
         },
-        strict: true,
       },
     },
   });
+  console.log(`[GBP] LLM extraction raw response:`, JSON.stringify(result.choices[0]?.message?.content).slice(0, 200));
 
   try {
     const rawContent = result.choices[0]?.message?.content;
@@ -203,14 +204,27 @@ Return JSON with these fields:
       season: parsed.season || "summer",
       serviceLabel: parsed.serviceLabel || "Wildlife Removal",
     };
-  } catch {
+  } catch (err) {
+    console.error(`[GBP] extractFieldsFromPost FAILED for title="${title}":`, err instanceof Error ? err.message : err);
+    // Fallback: try to extract species directly from the title
+    const titleLower = title.toLowerCase();
+    let fallbackSpecies = "wildlife";
+    let fallbackSize: "small" | "large" | "unknown" = "unknown";
+    for (const [key] of Object.entries(SPECIES_DESCRIPTIONS)) {
+      if (titleLower.includes(key)) {
+        fallbackSpecies = key;
+        fallbackSize = classifyAnimalSize(key);
+        break;
+      }
+    }
+    console.log(`[GBP] Using fallback species from title: ${fallbackSpecies}`);
     return {
-      species: "wildlife",
-      sizeClass: "unknown",
+      species: fallbackSpecies,
+      sizeClass: fallbackSize,
       action: "performing wildlife exclusion",
       scene: "suburban residential home",
       season: "summer",
-      serviceLabel: "Wildlife Removal",
+      serviceLabel: `${fallbackSpecies.charAt(0).toUpperCase() + fallbackSpecies.slice(1)} Removal`,
     };
   }
 }
