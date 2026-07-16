@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
-import { Download, ImageIcon, Plus, Trash2, Upload, Loader2, CheckCircle2, XCircle, Sparkles } from "lucide-react";
+import { Download, ImageIcon, Plus, Trash2, Upload, Loader2, CheckCircle2, XCircle, Sparkles, ZoomIn, X } from "lucide-react";
+import React from "react";
 import PortalLayout from "@/components/PortalLayout";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -60,48 +61,103 @@ function TerritorySelect({
 
 // ── Image Result Card ─────────────────────────────────────────────────────────
 function ImageCard({ img }: { img: GeneratedImage }) {
+  const [lightboxOpen, setLightboxOpen] = React.useState(false);
+
   return (
-    <div
-      className="rounded-lg border overflow-hidden"
-      style={{ borderColor: "oklch(0.88 0.012 80)", background: "oklch(1 0 0)" }}
-    >
-      {img.success ? (
-        <>
-          <div className="relative aspect-[4/3] bg-gray-100">
-            <img src={img.url} alt={img.serviceLabel} className="w-full h-full object-cover" />
-            <div className="absolute top-2 left-2">
+    <>
+      {/* Lightbox overlay — rendered in-place, does not navigate away */}
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.88)" }}
+          onClick={() => setLightboxOpen(false)}
+        >
+          <div
+            className="relative max-w-4xl w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={img.url}
+              alt={img.serviceLabel}
+              className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-2xl"
+            />
+            <div className="absolute top-3 left-3">
               <Badge className="text-xs" style={{ background: "oklch(0.32 0.09 145)", color: "white" }}>
                 {img.serviceLabel}
               </Badge>
             </div>
-          </div>
-          <div className="p-3 flex items-center justify-between gap-2">
-            <p className="text-xs truncate flex-1" style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}>
-              {img.title}
-            </p>
-            <a
-              href={img.url}
-              download={img.filename}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded transition-opacity hover:opacity-80"
-              style={{ background: "oklch(0.32 0.09 145)", color: "white", fontFamily: "Inter, sans-serif" }}
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+              style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
+              aria-label="Close lightbox"
             >
-              <Download size={11} /> Save
-            </a>
-          </div>
-        </>
-      ) : (
-        <div className="p-4 flex items-start gap-2">
-          <XCircle size={16} className="text-red-500 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-red-600">Generation failed</p>
-            <p className="text-xs mt-1" style={{ color: "oklch(0.52 0.016 80)" }}>{img.title}</p>
-            <p className="text-xs mt-1 text-red-400">{img.error}</p>
+              <X size={16} />
+            </button>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="text-sm text-white opacity-80 truncate flex-1">{img.title}</p>
+              <a
+                href={img.url}
+                download={img.filename}
+                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded transition-opacity hover:opacity-80"
+                style={{ background: "oklch(0.32 0.09 145)", color: "white" }}
+              >
+                <Download size={11} /> Download
+              </a>
+            </div>
           </div>
         </div>
       )}
-    </div>
+
+      <div
+        className="rounded-lg border overflow-hidden"
+        style={{ borderColor: "oklch(0.88 0.012 80)", background: "oklch(1 0 0)" }}
+      >
+        {img.success ? (
+          <>
+            <div
+              className="relative aspect-[4/3] bg-gray-100 cursor-zoom-in"
+              onClick={() => setLightboxOpen(true)}
+            >
+              <img src={img.url} alt={img.serviceLabel} className="w-full h-full object-cover" />
+              <div className="absolute top-2 left-2">
+                <Badge className="text-xs" style={{ background: "oklch(0.32 0.09 145)", color: "white" }}>
+                  {img.serviceLabel}
+                </Badge>
+              </div>
+              <div
+                className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                style={{ background: "rgba(0,0,0,0.25)" }}
+              >
+                <ZoomIn size={28} color="white" />
+              </div>
+            </div>
+            <div className="p-3 flex items-center justify-between gap-2">
+              <p className="text-xs truncate flex-1" style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}>
+                {img.title}
+              </p>
+              <a
+                href={img.url}
+                download={img.filename}
+                className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded transition-opacity hover:opacity-80"
+                style={{ background: "oklch(0.32 0.09 145)", color: "white", fontFamily: "Inter, sans-serif" }}
+              >
+                <Download size={11} /> Save
+              </a>
+            </div>
+          </>
+        ) : (
+          <div className="p-4 flex items-start gap-2">
+            <XCircle size={16} className="text-red-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-red-600">Generation failed</p>
+              <p className="text-xs mt-1" style={{ color: "oklch(0.52 0.016 80)" }}>{img.title}</p>
+              <p className="text-xs mt-1 text-red-400">{img.error}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
