@@ -251,24 +251,33 @@ function buildPromptFromFields(
   const speciesDesc = getSpeciesDescription(species);
 
   // Composition strategy based on animal size
-  // CRITICAL: Technician must NEVER be shown touching, holding, or grabbing the animal
+  // CRITICAL: Technician must NEVER be shown touching, holding, grabbing, or carrying the animal.
+  // The technician works on the BUILDING (installing mesh, sealing entry points, inspecting soffits).
+  // The animal is SEPARATE from the technician — observed from a distance.
   let compositionDirective: string;
   if (sizeClass === "small") {
-    // Small animals: place in foreground for visibility — in a humane trap or on a surface, NOT held
-    compositionDirective = `A ${speciesDesc} in the near foreground, sharp and clearly visible, perched on a surface or inside a humane wire live-trap close to camera, with shallow depth of field. The technician is NOT touching the animal. Behind in soft focus: a Skedaddle wildlife technician in a teal polo shirt and work pants ${action} at a ${scene}`;
+    // Small animals: place in foreground for visibility — on a surface or near entry point, NOT held
+    compositionDirective = `A ${speciesDesc} in the near foreground sitting on a wooden fence or porch railing, sharp and clearly visible, with shallow depth of field. In the blurred background: a Skedaddle wildlife technician in a teal polo shirt and work pants is kneeling beside the home foundation installing steel mesh over an entry point. The technician's hands are on the building materials only. The animal and technician are at least 3 meters apart`;
   } else {
     // Large animals and unknown: balanced field photo with clear separation between tech and animal
-    compositionDirective = `A ${speciesDesc} clearly visible and identifiable as the subject, positioned in the mid-ground of the frame. A Skedaddle wildlife technician in a teal polo shirt is ${actionFraming}, at a ${scene}. The technician is working on the building structure and is NOT touching or holding the animal. The ${species} is sharp with shallow depth of field separating it from the background`;
+    compositionDirective = `A ${speciesDesc} clearly visible and identifiable as the subject, positioned in the mid-ground of the frame near a residential structure. Separately, a Skedaddle wildlife technician in a teal polo shirt is ${actionFraming} on the building exterior. The technician's hands hold tools or building materials only. There is clear physical separation between the technician and the animal — they are never in contact. The ${species} is sharp with shallow depth of field`;
   }
 
   // CRITICAL: Repeat species name multiple times and put it first for Flux Pro adherence
   const speciesName = species.toLowerCase();
+
+  // Sanitize action text: remove any language about handling/holding/grabbing animals
+  const handlingPatterns = /\b(removed|captured|caught|grabbed|held|picked up|carried|relocated|trapped|handling|holding|grabbing|catching|carrying)\s+(the\s+)?(animal|raccoon|squirrel|bat|skunk|mouse|mice|bird|chipmunk|groundhog|opossum|snake|wildlife)\b/gi;
+  const sanitizedAction = action
+    .replace(handlingPatterns, "sealed the entry point")
+    .replace(/\bhumanely\b/gi, "safely");
+
   const prompt = [
     `A ${speciesName}. This image MUST show a ${speciesDesc}.`,
     `Professional DSLR photograph, ${compositionDirective}.`,
     `Location: ${suburbText}, ${cityState}, realistic suburban residential neighborhood.`,
     `${lighting}.`,
-    `The technician is working on the building structure, ${action}. The technician does not touch or hold the animal at any point.`,
+    `The technician is working on the building structure: ${sanitizedAction}. The technician's hands only touch tools, mesh, caulk, or building materials.`,
     `The animal in this photo is specifically a ${speciesName}, showing its key identifying features clearly.`,
     `Photorealistic, well-composed, natural candid moment, editorial quality wildlife control documentation photography.`,
     `Shot on Canon EOS R5, 85mm f/1.8, natural light, sharp focus on the ${speciesName}.`,
@@ -350,6 +359,8 @@ Answer with JSON:
 // ── #7: Add brand overlay using sharp's Pango text rendering ────────────────
 // Uses sharp's built-in text() method which renders via Pango/fontconfig.
 // This is font-independent — works on any server without requiring specific fonts.
+// IMPORTANT: All text buffers are clamped to fit within the image width to prevent
+// "Image to composite must have same dimensions or smaller" errors.
 async function addBrandOverlay(
   imageBuffer: Buffer,
   serviceLabel: string,
@@ -361,8 +372,18 @@ async function addBrandOverlay(
   const barH = Math.round(H * 0.14);
   const barY = H - barH;
   const textX = Math.round(W * 0.04);
+  const maxTextWidth = W - textX * 2; // max width for any text buffer
   const fontSize = Math.round(H * 0.045);
-  const fontSizeSmall = Math.round(H * 0.032);
+  const fontSizeSmall = Math.round(H * 0.028);
+
+  // Helper: clamp a rendered text buffer to fit within maxW pixels
+  async function clampTextWidth(buf: Buffer, maxW: number): Promise<Buffer> {
+    const m = await sharp(buf).metadata();
+    if ((m.width ?? 0) > maxW) {
+      return await sharp(buf).resize({ width: maxW, fit: "inside" }).png().toBuffer();
+    }
+    return buf;
+  }
 
   // Create the teal bar as a separate RGBA buffer
   const tealBar = await sharp({
@@ -370,33 +391,35 @@ async function addBrandOverlay(
   }).png().toBuffer();
 
   // Render service label text using Pango (font-independent)
-  const serviceLabelBuf = await sharp({
+  let serviceLabelBuf: Buffer = await sharp({
     text: {
       text: `<span foreground="white" font_desc="Sans Bold ${fontSize}">${escapePango(serviceLabel)}</span>`,
       dpi: 72,
       rgba: true,
     },
   }).png().toBuffer();
+  serviceLabelBuf = await clampTextWidth(serviceLabelBuf, maxTextWidth - 200); // leave room for Skedaddle
   const serviceMeta = await sharp(serviceLabelBuf).metadata();
 
   // Render city/state text
-  const cityBuf = await sharp({
+  let cityBuf: Buffer = await sharp({
     text: {
       text: `<span foreground="#C8EBEB" font_desc="Sans ${fontSizeSmall}">${escapePango(cityState)}</span>`,
       dpi: 72,
       rgba: true,
     },
   }).png().toBuffer();
+  cityBuf = await clampTextWidth(cityBuf, maxTextWidth - 200);
 
   // Calculate text positions within the bar
-  const textYBase = barY + Math.round(barH * 0.22);
+  const textYBase = barY + Math.round(barH * 0.25);
   const serviceHeight = serviceMeta.height ?? fontSize;
 
   // Build composite layers
   const composites: Array<{ input: Buffer; top: number; left: number; blend: "over" }> = [
     { input: tealBar, top: barY, left: 0, blend: "over" },
     { input: serviceLabelBuf, top: textYBase, left: textX, blend: "over" },
-    { input: cityBuf, top: textYBase + serviceHeight + 6, left: textX, blend: "over" },
+    { input: cityBuf, top: textYBase + serviceHeight + 4, left: textX, blend: "over" },
   ];
 
   // Brand mark: either the real logo PNG or rendered "Skedaddle" text
@@ -413,13 +436,14 @@ async function addBrandOverlay(
   } else {
     // Render "Skedaddle" brand text
     const brandFontSize = Math.round(H * 0.038);
-    const brandBuf = await sharp({
+    let brandBuf: Buffer = await sharp({
       text: {
         text: `<span foreground="white" font_desc="Sans Bold ${brandFontSize}">Skedaddle</span>`,
         dpi: 72,
         rgba: true,
       },
     }).png().toBuffer();
+    brandBuf = await clampTextWidth(brandBuf, Math.round(W * 0.25));
     const brandMeta = await sharp(brandBuf).metadata();
     const brandWidth = brandMeta.width ?? 150;
     const brandHeight = brandMeta.height ?? brandFontSize;
