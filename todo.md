@@ -59,3 +59,7 @@
 - [x] Fix animal species accuracy — 2-retry QA loop with increasingly specific prompts + species descriptions in initial prompt
 - [x] Fix technician-animal interaction — technician should NEVER be shown touching/handling animals directly (use exclusion devices, one-way doors, observation from distance)
 - [x] Fix image dimensions — enforce 1200x900 via sharp resize after download + explicit size in API call
+
+## Prompt Realism Overhaul (July 16)
+- [x] Rewrite prompt strategy to produce realistic single-subject photos (not staged composites)
+- [x] Create 10-post test CSV for bulk generation testing

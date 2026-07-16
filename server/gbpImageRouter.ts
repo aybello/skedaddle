@@ -235,52 +235,110 @@ function buildPromptFromFields(
   cityState: string,
   suburbText: string,
 ): string {
-  const { species, sizeClass, action, scene, season } = fields;
-  const actionFraming = getNextActionFraming();
+  const { species, sizeClass, scene, season } = fields;
 
   // Season-specific lighting
   const seasonLighting: Record<string, string> = {
-    spring: "soft overcast spring light, fresh green foliage",
-    summer: "warm golden-hour summer light, lush green trees",
-    fall: "warm autumn light, colorful fall foliage",
+    spring: "soft overcast spring light, fresh green foliage in background",
+    summer: "warm golden-hour light, green leafy trees",
+    fall: "warm autumn light, orange and yellow foliage",
     winter: "cool crisp winter light, bare branches",
   };
   const lighting = seasonLighting[season.toLowerCase()] || seasonLighting.summer;
 
   // Get detailed species description for accurate rendering
   const speciesDesc = getSpeciesDescription(species);
-
-  // Composition strategy based on animal size
-  // CRITICAL: Technician must NEVER be shown touching, holding, grabbing, or carrying the animal.
-  // The technician works on the BUILDING (installing mesh, sealing entry points, inspecting soffits).
-  // The animal is SEPARATE from the technician — observed from a distance.
-  let compositionDirective: string;
-  if (sizeClass === "small") {
-    // Small animals: place in foreground for visibility — on a surface or near entry point, NOT held
-    compositionDirective = `A ${speciesDesc} in the near foreground sitting on a wooden fence or porch railing, sharp and clearly visible, with shallow depth of field. In the blurred background: a Skedaddle wildlife technician in a teal polo shirt and work pants is kneeling beside the home foundation installing steel mesh over an entry point. The technician's hands are on the building materials only. The animal and technician are at least 3 meters apart`;
-  } else {
-    // Large animals and unknown: balanced field photo with clear separation between tech and animal
-    compositionDirective = `A ${speciesDesc} clearly visible and identifiable as the subject, positioned in the mid-ground of the frame near a residential structure. Separately, a Skedaddle wildlife technician in a teal polo shirt is ${actionFraming} on the building exterior. The technician's hands hold tools or building materials only. There is clear physical separation between the technician and the animal — they are never in contact. The ${species} is sharp with shallow depth of field`;
-  }
-
-  // CRITICAL: Repeat species name multiple times and put it first for Flux Pro adherence
   const speciesName = species.toLowerCase();
 
-  // Sanitize action text: remove any language about handling/holding/grabbing animals
-  const handlingPatterns = /\b(removed|captured|caught|grabbed|held|picked up|carried|relocated|trapped|handling|holding|grabbing|catching|carrying)\s+(the\s+)?(animal|raccoon|squirrel|bat|skunk|mouse|mice|bird|chipmunk|groundhog|opossum|snake|wildlife)\b/gi;
-  const sanitizedAction = action
-    .replace(handlingPatterns, "sealed the entry point")
-    .replace(/\bhumanely\b/gi, "safely");
+  // NEW STRATEGY: Generate realistic single-subject photos.
+  // Real wildlife control photos show ONE of these scenarios:
+  //   A) The animal in its natural context (peeking from soffit, on roof, near entry point)
+  //   B) The technician working on the structure (no animal visible)
+  // We pick scenario A (animal-focused) because it's more engaging for GBP.
+  // The key: show the animal doing what it actually does — NOT posed with a human.
 
+  // Scene contexts that feel real (animal caught in the act)
+  const animalScenes: Record<string, string[]> = {
+    raccoon: [
+      "peeking out from a gap in a residential soffit, face partially visible through the opening",
+      "sitting on a residential rooftop at dusk near a damaged roof vent",
+      "climbing down a downspout on the side of a suburban home",
+      "looking out from under a backyard deck through the lattice",
+    ],
+    squirrel: [
+      "perched on a residential roof edge next to a chewed soffit vent",
+      "sitting on a tree branch very close to a home's roofline",
+      "peeking out of a small gap in a home's fascia board",
+      "on a suburban backyard fence near a house",
+    ],
+    bat: [
+      "a cluster of small brown bats hanging from attic rafters in dim light",
+      "a single bat clinging to the exterior brick wall of a home near a vent",
+      "a bat in flight silhouetted against a dusky suburban sky near roofline",
+      "several bats roosting in a narrow gap between roof shingles and fascia",
+    ],
+    skunk: [
+      "a skunk walking across a suburban backyard lawn at dusk",
+      "a skunk partially visible under a garden shed, peeking out",
+      "a skunk near a home's foundation wall, sniffing at a gap",
+      "a skunk on a residential driveway near garbage bins",
+    ],
+    mouse: [
+      "a small house mouse on a kitchen counter near a wall gap",
+      "a mouse peeking out from a hole in drywall near a baseboard",
+      "a mouse sitting on insulation in an attic space",
+      "a mouse near a foundation crack on the exterior of a home",
+    ],
+    mice: [
+      "a small house mouse on a kitchen counter near a wall gap",
+      "a mouse peeking out from a hole in drywall near a baseboard",
+      "a mouse sitting on insulation in an attic space",
+      "a mouse near a foundation crack on the exterior of a home",
+    ],
+    bird: [
+      "a bird nesting in a residential dryer vent opening",
+      "a bird perched on a suburban home's gutter with nesting material",
+      "a bird's nest visible inside a bathroom exhaust vent on a house exterior",
+      "a starling sitting at the entrance of a gap in a home's soffit",
+    ],
+    chipmunk: [
+      "a chipmunk sitting on a residential porch step near a foundation gap",
+      "a chipmunk peeking out from a hole in a garden retaining wall",
+      "a chipmunk on a suburban sidewalk near a home's foundation",
+      "a chipmunk near a downspout base beside a residential home",
+    ],
+    groundhog: [
+      "a groundhog sitting upright in a suburban backyard near its burrow entrance",
+      "a groundhog peeking out from under a garden shed",
+      "a groundhog in a residential vegetable garden near a fence",
+      "a groundhog near the foundation of a suburban home",
+    ],
+    opossum: [
+      "an opossum on a residential fence at night, caught in a motion-sensor light",
+      "an opossum under a suburban deck, visible through the lattice",
+      "an opossum near a home's garbage area at dusk",
+      "an opossum climbing a residential downspout",
+    ],
+    snake: [
+      "a snake coiled near a home's foundation vent",
+      "a snake on a suburban garden path near a house",
+      "a snake visible in a basement window well",
+      "a snake near a gap in a home's exterior siding",
+    ],
+  };
+
+  // Pick a random scene for this species, or use a generic one
+  const speciesScenes = animalScenes[speciesName] || animalScenes["raccoon"];
+  const randomScene = speciesScenes[Math.floor(Math.random() * speciesScenes.length)];
+
+  // Build a simple, focused prompt that looks like a real photo
   const prompt = [
-    `A ${speciesName}. This image MUST show a ${speciesDesc}.`,
-    `Professional DSLR photograph, ${compositionDirective}.`,
-    `Location: ${suburbText}, ${cityState}, realistic suburban residential neighborhood.`,
+    `Photograph of ${speciesDesc}, ${randomScene}.`,
+    `Suburban residential neighborhood in ${suburbText}, ${cityState}.`,
     `${lighting}.`,
-    `The technician is working on the building structure: ${sanitizedAction}. The technician's hands only touch tools, mesh, caulk, or building materials.`,
-    `The animal in this photo is specifically a ${speciesName}, showing its key identifying features clearly.`,
-    `Photorealistic, well-composed, natural candid moment, editorial quality wildlife control documentation photography.`,
-    `Shot on Canon EOS R5, 85mm f/1.8, natural light, sharp focus on the ${speciesName}.`,
+    `Realistic iPhone photo taken by a homeowner or wildlife technician documenting the situation.`,
+    `Natural lighting, slightly imperfect framing like a real candid photo. No studio lighting. No posing.`,
+    `The image looks like it was taken quickly to document a real wildlife situation at a home.`,
   ].join(" ");
 
   return prompt;
