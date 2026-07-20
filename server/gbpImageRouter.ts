@@ -538,11 +538,11 @@ async function generateImageViaGPT(prompt: string): Promise<Buffer> {
         Authorization: `Bearer ${openaiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-image-1",
+        model: "gpt-image-2",
         prompt,
         n: 1,
         size: "1536x1024",
-        quality: "medium",
+        quality: "high",
       }),
     });
 
