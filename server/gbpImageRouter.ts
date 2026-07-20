@@ -259,70 +259,70 @@ function buildPromptFromFields(
   // Realistic job scenarios per species (tech + animal in same frame)
   const jobScenes: Record<string, string[]> = {
     raccoon: [
-      "A wildlife technician in a teal polo shirt kneeling on a residential roof, installing steel mesh over a soffit gap. A raccoon with black mask markings and ringed tail is peeking out from the adjacent soffit opening, watching the technician work",
-      "A wildlife technician in a teal polo shirt on a ladder inspecting a damaged roof vent on a suburban home. A raccoon is visible sitting on the roof ridge nearby, looking at the technician",
-      "A wildlife technician in a teal polo shirt installing a one-way exclusion door on a chimney cap. A raccoon is climbing out of the chimney opening as the device is being fitted",
-      "A wildlife technician in a teal polo shirt crouching beside a backyard deck, shining a flashlight underneath. A raccoon's face is visible under the deck, eyes reflecting the light",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, black baseball cap with the same green raccoon logo, and black work gloves, kneeling on a residential roof installing steel mesh over a soffit gap. A raccoon with black mask markings and ringed tail is peeking out from the adjacent soffit opening, watching the technician work",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, black baseball cap with the same green raccoon logo, and black work gloves, on a ladder inspecting a damaged roof vent on a suburban home. A raccoon is visible sitting on the roof ridge nearby, looking at the technician",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, black baseball cap with the same green raccoon logo, and black work gloves, installing a one-way exclusion door on a chimney cap. A raccoon is climbing out of the chimney opening as the device is being fitted",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, black baseball cap with the same green raccoon logo, and black work gloves, crouching beside a backyard deck, shining a flashlight underneath. A raccoon's face is visible under the deck, eyes reflecting the light",
     ],
     squirrel: [
-      "A wildlife technician in a teal polo shirt on a ladder, screwing steel mesh over a chewed hole in a home's fascia board. A grey squirrel is perched on a nearby tree branch watching",
-      "A wildlife technician in a teal polo shirt on a residential roof, replacing a damaged plastic vent with a metal one. A squirrel is sitting on the gutter edge a few feet away",
-      "A wildlife technician in a teal polo shirt inspecting attic insulation with a flashlight. A squirrel is visible in the corner of the attic near its nest of shredded material",
-      "A wildlife technician in a teal polo shirt installing a one-way door over a gap in a home's soffit. A squirrel is on the roof nearby, looking at the work being done",
+      "A wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, black cap with the same logo, on a ladder screwing steel mesh over a chewed hole in a home's fascia board. A grey squirrel is perched on a nearby tree branch watching",
+      "A wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, black cap with the same logo, on a residential roof replacing a damaged plastic vent with a metal one. A squirrel is sitting on the gutter edge a few feet away",
+      "A wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, black cap with the same logo, inspecting attic insulation with a flashlight. A squirrel is visible in the corner of the attic near its nest of shredded material",
+      "A wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, black cap with the same logo, installing a one-way door over a gap in a home's soffit. A squirrel is on the roof nearby, looking at the work being done",
     ],
     bat: [
-      "A wildlife technician in a teal polo shirt on a ladder at dusk, installing fine mesh exclusion netting over a gap between roof shingles and fascia. Several small brown bats are visible emerging from the gap",
-      "A wildlife technician in a teal polo shirt in a dim attic space, pointing a flashlight at a cluster of small brown bats hanging from the rafters overhead",
-      "A wildlife technician in a teal polo shirt on a ladder inspecting the exterior of a brick building at twilight. A bat is clinging to the wall near a vent opening",
-      "A wildlife technician in a teal polo shirt installing a bat valve (one-way exit device) over a gap in a home's soffit. Bats are visible roosting in the gap behind the device",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo on a ladder at dusk, installing fine mesh exclusion netting over a gap between roof shingles and fascia. Several small brown bats are visible emerging from the gap",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo in a dim attic space, pointing a flashlight at a cluster of small brown bats hanging from the rafters overhead",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo on a ladder inspecting the exterior of a brick building at twilight. A bat is clinging to the wall near a vent opening",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo installing a bat valve (one-way exit device) over a gap in a home's soffit. Bats are visible roosting in the gap behind the device",
     ],
     skunk: [
-      "A wildlife technician in a teal polo shirt crouching near a home's foundation, installing a one-way exclusion door at a gap under the porch. A black and white striped skunk is visible under the porch watching",
-      "A wildlife technician in a teal polo shirt kneeling beside a garden shed, digging a trench to install underground mesh. A striped skunk is walking away across the lawn nearby",
-      "A wildlife technician in a teal polo shirt with a flashlight, inspecting under a residential deck. A skunk with distinctive black fur and white stripe is visible underneath",
-      "A wildlife technician in a teal polo shirt sealing a foundation gap with steel mesh. A skunk is visible nearby on the lawn, watching from a safe distance",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo crouching near a home's foundation, installing a one-way exclusion door at a gap under the porch. A black and white striped skunk is visible under the porch watching",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo kneeling beside a garden shed, digging a trench to install underground mesh. A striped skunk is walking away across the lawn nearby",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo with a flashlight, inspecting under a residential deck. A skunk with distinctive black fur and white stripe is visible underneath",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo sealing a foundation gap with steel mesh. A skunk is visible nearby on the lawn, watching from a safe distance",
     ],
     mouse: [
-      "A wildlife technician in a teal polo shirt crouching at a home's foundation, sealing a small crack with steel wool and caulk. A tiny house mouse is visible peeking out from a nearby gap in the siding",
-      "A wildlife technician in a teal polo shirt in a garage, inspecting insulation along the wall. A small mouse is visible sitting on a shelf nearby",
-      "A wildlife technician in a teal polo shirt installing a metal kick plate at the base of a door. A mouse is visible near the corner of the room",
-      "A wildlife technician in a teal polo shirt checking a monitoring station placed along a garage wall. A small mouse is visible near the baseboard",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo crouching at a home's foundation, sealing a small crack with steel wool and caulk. A tiny house mouse is visible peeking out from a nearby gap in the siding",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo in a garage, inspecting insulation along the wall. A small mouse is visible sitting on a shelf nearby",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo installing a metal kick plate at the base of a door. A mouse is visible near the corner of the room",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo checking a monitoring station placed along a garage wall. A small mouse is visible near the baseboard",
     ],
     mice: [
-      "A wildlife technician in a teal polo shirt crouching at a home's foundation, sealing a small crack with steel wool and caulk. A tiny house mouse is visible peeking out from a nearby gap in the siding",
-      "A wildlife technician in a teal polo shirt in a garage, inspecting insulation along the wall. A small mouse is visible sitting on a shelf nearby",
-      "A wildlife technician in a teal polo shirt installing a metal kick plate at the base of a door. A mouse is visible near the corner of the room",
-      "A wildlife technician in a teal polo shirt checking a monitoring station placed along a garage wall. A small mouse is visible near the baseboard",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo crouching at a home's foundation, sealing a small crack with steel wool and caulk. A tiny house mouse is visible peeking out from a nearby gap in the siding",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo in a garage, inspecting insulation along the wall. A small mouse is visible sitting on a shelf nearby",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo installing a metal kick plate at the base of a door. A mouse is visible near the corner of the room",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo checking a monitoring station placed along a garage wall. A small mouse is visible near the baseboard",
     ],
     bird: [
-      "A wildlife technician in a teal polo shirt on a ladder, installing a bird-proof vent cover over a dryer vent. A bird is perched on the gutter nearby with nesting material in its beak",
-      "A wildlife technician in a teal polo shirt inspecting a bathroom exhaust vent on the exterior of a home. A bird's nest is visible inside the vent opening",
-      "A wildlife technician in a teal polo shirt on a roof, fitting mesh over a gap where birds have been entering. A starling is sitting on the roof ridge watching",
-      "A wildlife technician in a teal polo shirt carefully removing old nesting material from a vent opening. A bird is perched on a nearby branch watching",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo on a ladder, installing a bird-proof vent cover over a dryer vent. A bird is perched on the gutter nearby with nesting material in its beak",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo inspecting a bathroom exhaust vent on the exterior of a home. A bird's nest is visible inside the vent opening",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo on a roof, fitting mesh over a gap where birds have been entering. A starling is sitting on the roof ridge watching",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo carefully removing old nesting material from a vent opening. A bird is perched on a nearby branch watching",
     ],
     chipmunk: [
-      "A wildlife technician in a teal polo shirt kneeling at a front porch, installing mesh along the foundation. A chipmunk with brown stripes is sitting on the porch step nearby",
-      "A wildlife technician in a teal polo shirt digging a shallow trench beside a home's foundation to install exclusion mesh. A chipmunk is peeking out from a hole in the garden nearby",
-      "A wildlife technician in a teal polo shirt sealing gaps around a home's downspout base. A chipmunk is perched on a nearby retaining wall watching",
-      "A wildlife technician in a teal polo shirt inspecting burrow holes near a residential walkway. A chipmunk is visible sitting upright near one of the holes",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo kneeling at a front porch, installing mesh along the foundation. A chipmunk with brown stripes is sitting on the porch step nearby",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo digging a shallow trench beside a home's foundation to install exclusion mesh. A chipmunk is peeking out from a hole in the garden nearby",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo sealing gaps around a home's downspout base. A chipmunk is perched on a nearby retaining wall watching",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo inspecting burrow holes near a residential walkway. A chipmunk is visible sitting upright near one of the holes",
     ],
     groundhog: [
-      "A wildlife technician in a teal polo shirt installing an L-shaped wire mesh barrier along a garden fence line. A groundhog is sitting upright in the yard nearby, watching",
-      "A wildlife technician in a teal polo shirt kneeling beside a shed, installing a one-way door at a burrow entrance. A groundhog is visible near the edge of the yard",
-      "A wildlife technician in a teal polo shirt digging a trench for underground exclusion fencing. A groundhog is peeking out from its burrow hole a few feet away",
-      "A wildlife technician in a teal polo shirt inspecting groundhog damage to a residential garden. A groundhog is visible sitting at the far end of the yard",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo installing an L-shaped wire mesh barrier along a garden fence line. A groundhog is sitting upright in the yard nearby, watching",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo kneeling beside a shed, installing a one-way door at a burrow entrance. A groundhog is visible near the edge of the yard",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo digging a trench for underground exclusion fencing. A groundhog is peeking out from its burrow hole a few feet away",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo inspecting groundhog damage to a residential garden. A groundhog is visible sitting at the far end of the yard",
     ],
     opossum: [
-      "A wildlife technician in a teal polo shirt on a ladder, installing mesh over a gap under a home's eaves. An opossum with grey fur and a pink nose is visible on a nearby tree branch",
-      "A wildlife technician in a teal polo shirt crouching beside a deck, installing a one-way door. An opossum is visible underneath the deck looking out",
-      "A wildlife technician in a teal polo shirt shining a flashlight under a porch at night. An opossum's face is visible in the beam of light",
-      "A wildlife technician in a teal polo shirt sealing gaps along a home's foundation. An opossum is visible walking along the fence line in the background",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo on a ladder, installing mesh over a gap under a home's eaves. An opossum with grey fur and a pink nose is visible on a nearby tree branch",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo crouching beside a deck, installing a one-way door. An opossum is visible underneath the deck looking out",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo shining a flashlight under a porch at night. An opossum's face is visible in the beam of light",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo sealing gaps along a home's foundation. An opossum is visible walking along the fence line in the background",
     ],
     snake: [
-      "A wildlife technician in a teal polo shirt sealing a gap in a home's foundation with expanding foam. A snake is visible coiled near the base of the wall",
-      "A wildlife technician in a teal polo shirt installing mesh over a basement window well. A snake is visible inside the window well",
-      "A wildlife technician in a teal polo shirt inspecting the exterior siding of a home. A snake is visible in the garden bed below",
-      "A wildlife technician in a teal polo shirt checking a gap under a garage door. A snake is visible nearby on the driveway",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo sealing a gap in a home's foundation with expanding foam. A snake is visible coiled near the base of the wall",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo installing mesh over a basement window well. A snake is visible inside the window well",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo inspecting the exterior siding of a home. A snake is visible in the garden bed below",
+      "A Skedaddle wildlife technician wearing a bright lime-green polo shirt with a small raccoon-in-circle logo on the left chest, black work pants, and black baseball cap with the same green raccoon logo checking a gap under a garage door. A snake is visible nearby on the driveway",
     ],
   };
 
@@ -442,9 +442,9 @@ async function addBrandOverlay(
     return buf;
   }
 
-  // Create the teal bar as a separate RGBA buffer
-  const tealBar = await sharp({
-    create: { width: W, height: barH, channels: 4, background: { r: 1, g: 105, b: 111, alpha: 217 } },
+  // Create the Skedaddle green bar as a separate RGBA buffer
+  const brandBar = await sharp({
+    create: { width: W, height: barH, channels: 4, background: { r: 122, g: 193, b: 67, alpha: 230 } },
   }).png().toBuffer();
 
   // Render service label text using Pango (font-independent)
@@ -474,7 +474,7 @@ async function addBrandOverlay(
 
   // Build composite layers
   const composites: Array<{ input: Buffer; top: number; left: number; blend: "over" }> = [
-    { input: tealBar, top: barY, left: 0, blend: "over" },
+    { input: brandBar, top: barY, left: 0, blend: "over" },
     { input: serviceLabelBuf, top: textYBase, left: textX, blend: "over" },
     { input: cityBuf, top: textYBase + serviceHeight + 4, left: textX, blend: "over" },
   ];
@@ -594,7 +594,7 @@ async function generateSingleImage(
       if (passed) break;
       // Retry with increasingly specific prompt
       const retryPrompt = attempt === 0
-        ? `Close-up wildlife photograph: a ${speciesDesc} clearly visible in the center foreground, occupying at least 30% of the frame. The animal is sitting on the ground near a suburban home foundation. Sharp focus on the animal showing its distinctive features. The animal is NOT being held or touched by anyone. Behind in soft bokeh: a Skedaddle wildlife technician in teal polo shirt inspecting the home exterior in ${cityState}. Photorealistic, Canon EOS R5, 85mm f/1.8, golden hour natural light.`
+        ? `Close-up wildlife photograph: a ${speciesDesc} clearly visible in the center foreground, occupying at least 30% of the frame. The animal is sitting on the ground near a suburban home foundation. Sharp focus on the animal showing its distinctive features. The animal is NOT being held or touched by anyone. Behind in soft bokeh: a Skedaddle wildlife technician in bright lime-green Skedaddle polo shirt with raccoon logo on chest, black cap with raccoon logo, inspecting the home exterior in ${cityState}. Photorealistic, Canon EOS R5, 85mm f/1.8, golden hour natural light.`
         : `Extreme close-up nature photograph of a single ${speciesDesc}. The animal fills most of the frame, photographed at eye level in a suburban backyard setting. Ultra-sharp detail on fur/feathers and distinctive markings. No humans visible. Shallow depth of field, background is a blurred residential home. Shot in ${suburb || cityState}. Photorealistic, Nikon Z9, 105mm macro lens, f/2.8.`;
       try {
         rawBuffer = await generateImageViaGPT(retryPrompt);
