@@ -525,10 +525,42 @@ function escapePango(str: string): string {
     .replace(/'/g, "&apos;");
 }
 
-// ── Generate image via GPT Image 2 (built-in forge API) ─────────────────────
+// ── Generate image via OpenAI API directly (user's own key) ───────────────────
 async function generateImageViaGPT(prompt: string): Promise<Buffer> {
+  const openaiKey = process.env.OPENAI_API_KEY;
+
+  // Primary: use user's own OpenAI API key directly
+  if (openaiKey) {
+    const response = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${openaiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-image-1",
+        prompt,
+        n: 1,
+        size: "1536x1024",
+        quality: "medium",
+      }),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      throw new Error(`OpenAI image generation failed (${response.status}): ${detail.slice(0, 200)}`);
+    }
+
+    const result = (await response.json()) as { data: Array<{ b64_json: string }> };
+    if (!result.data?.[0]?.b64_json) {
+      throw new Error("OpenAI returned no image data");
+    }
+    return Buffer.from(result.data[0].b64_json, "base64");
+  }
+
+  // Fallback: use built-in forge API
   if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
-    throw new Error("BUILT_IN_FORGE_API_URL or BUILT_IN_FORGE_API_KEY not configured");
+    throw new Error("Neither OPENAI_API_KEY nor BUILT_IN_FORGE_API_URL configured for image generation");
   }
 
   const baseUrl = ENV.forgeApiUrl.endsWith("/") ? ENV.forgeApiUrl : `${ENV.forgeApiUrl}/`;
