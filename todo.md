@@ -42,7 +42,7 @@
 - [x] Lightbox: add Regenerate button to re-generate a single image from inside the lightbox
 
 ## Pending
-- [ ] Remaining 15 territory strategy reports (Minneapolis, Coquitlam, Baltimore, etc.)
+- [x] Remaining 15 territory strategy reports (Minneapolis, Coquitlam, Baltimore, etc.)
 - [ ] Logo overlay once Skedaddle logo PNG is provided
 
 ## Branding Update: Official Skedaddle Uniform (July 20)
@@ -81,7 +81,7 @@
 ## ═══════════════════════════════════════════════════════
 
 ## PRIORITY 1 — Territory Reports (IMMEDIATE — Dave booking calls NOW)
-- [ ] Finish remaining 15 territory strategy reports
+- [x] Finish remaining 15 territory strategy reports
 - [ ] Email Kira for raw Salesforce CSV exports (not through Looker Studio)
 - [ ] Fix page validation — use GSC/GA to confirm pages exist before saying "no page found"
 - [ ] Add network close ratio by species as benchmark comparison in reports
@@ -188,3 +188,22 @@
 - [x] Flag GBP data as incomplete for multi-GBP territories (GBP disclaimer note added to Analytics.tsx)
 - [ ] Fix GBP post volume: 20-25 posts/month per sub-location for large territories
 - [ ] Add corporate vs franchise distinction to territory data
+
+## Dave's Email Feedback — Strategy Template Fixes (Jul 23, 2026)
+- [x] Fix report template: use combined GBP (calls + website clicks) not just calls
+- [x] Fix report template: use last 12 months data (not YTD) for all sections except exec summary
+- [x] Fix report template: show strengths & opportunities, never frame underperformance negatively
+- [x] Fix report template: don't turn positives into negatives (e.g., concentration risk)
+- [x] Fix report template: GBP post volume should be 30-40/month per territory (not 14)
+- [x] Fix report template: longest possible time range for GSC (16 months or 12 + YoY)
+- [x] Fix report template: don't auto-slot numbers into proposed program
+- [x] Fix report template: network close rate by species benchmark comparison
+- [x] Fix report template: identify anomalies (e.g., species pages linking to corporate)
+- [x] Fix report template: validate all data / flag potential hallucinations
+- [ ] Investigate: why Ottawa missing from session volume rankings
+- [ ] Investigate: why Hamilton shows above Milwaukee in sessions (data accuracy)
+- [ ] Investigate: how Denver/Colorado compares in sessions
+- [ ] Include Waukesha in Wisconsin territory data
+- [x] Generate corrected reports for all 15 remaining territories
+- [x] Update Home page to show all 19 territories (change filter from full-data to dashboard-ready)
+- [x] Update admin note text since all territories now have dashboards

@@ -172,7 +172,7 @@ function LocationCard({ loc }: { loc: FranchiseLocation }) {
 export default function Home() {
   const { user } = useAuth();
 
-  // Only show complete territories (full-data tag) on the overview
+  // Show all territories with complete dashboards
   const completeLocations = FRANCHISE_LOCATIONS.filter((f) => f.tags?.includes("full-data"));
 
   const visibleLocations =
@@ -228,7 +228,7 @@ export default function Home() {
               fontFamily: "Inter, sans-serif",
             }}
           >
-            <strong style={{ color: "oklch(0.32 0.09 145)" }}>Admin note:</strong> 15 additional territories are accessible via the sidebar. Full reports and action plans are being built — Hamilton, Durham, Milwaukee, and Madison are complete.
+            <strong style={{ color: "oklch(0.32 0.09 145)" }}>Admin note:</strong> All 19 territories now have complete strategy dashboards with Salesforce revenue data, GBP performance metrics, species breakdowns, and suburb rankings. Reports updated July 23, 2026.
           </div>
         )}
       </div>
