@@ -142,7 +142,7 @@ function EnhancedTooltip({ active, payload, label, chartType }: any) {
 }
 
 // ─── Insights Panel (Collapsible) ───────────────────────────────────────────
-function InsightsPanel({ insights, isLoading }: { insights: any[] | undefined; isLoading: boolean }) {
+function InsightsPanel({ insights, isLoading, territoryName }: { insights: any[] | undefined; isLoading: boolean; territoryName: string }) {
   const [isOpen, setIsOpen] = useState(false);
 
   if (isLoading) {
@@ -181,7 +181,7 @@ function InsightsPanel({ insights, isLoading }: { insights: any[] | undefined; i
       >
         <Lightbulb size={16} color={GOLD} />
         <span style={{ fontSize: 13, fontWeight: 700, color: FOREST, fontFamily: "Inter, sans-serif" }}>
-          Network Insights
+          {territoryName} Insights
         </span>
         <span style={{ fontSize: 11, color: "#888", marginLeft: 4 }}>
           {warningCount > 0 && <span style={{ color: "#dc2626", fontWeight: 600 }}>{warningCount} warning{warningCount !== 1 ? "s" : ""}</span>}
@@ -246,10 +246,11 @@ export default function Analytics() {
   // Fetch territories (19 parent territories)
   const { data: territories } = trpc.analytics.getTerritories.useQuery();
 
-  // Fetch insights
+  // Fetch insights — territory-specific when a territory is selected
   const { data: insights, isLoading: insightsLoading } = trpc.analytics.getInsights.useQuery({
     year: selectedYear,
     month: comparisonMonth,
+    territoryId: selectedTerritory,
   });
 
   // Fetch GA4 trend data (aggregated across sub-locations)
@@ -660,7 +661,7 @@ export default function Analytics() {
         )}
 
         {/* ─── Automated Insights Panel (Collapsible, below charts) ──────────── */}
-        <InsightsPanel insights={insights} isLoading={insightsLoading} />
+        <InsightsPanel insights={insights} isLoading={insightsLoading} territoryName={selectedTerritoryName} />
 
         {/* ─── Data Source Note ─────────────────────────────────────────────────── */}
         <div style={{ padding: "14px 18px", background: CREAM, borderRadius: 8, border: `1px solid ${MIST}`, fontSize: 12, color: "#666" }}>

@@ -172,3 +172,6 @@
 - [x] Update analytics backend to aggregate sub-locations under parent territories
 - [x] Update frontend dropdowns to show 19 parent territories instead of raw sub-locations
 - [ ] Allow drill-down into sub-locations within a selected territory (future enhancement)
+
+## Insights Panel Enhancement (July 23)
+- [x] Make insights panel dynamically update to show territory-specific insights for the selected parent territory

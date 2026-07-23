@@ -255,12 +255,13 @@ export const analyticsRouter = router({
     .input(z.object({
       year: z.number(),
       month: z.number().min(1).max(12),
+      territoryId: z.string().optional(),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
 
-      const { year, month } = input;
+      const { year, month, territoryId } = input;
       const prevYear = year - 1;
       const insights: Array<{
         type: "warning" | "success" | "info";
@@ -273,8 +274,12 @@ export const analyticsRouter = router({
         changePercent: number;
       }> = [];
 
-      // Check each of the 19 territories
-      for (const group of TERRITORY_GROUPS) {
+      // If a specific territory is selected, only check that one; otherwise check all 19
+      const groupsToCheck = territoryId
+        ? TERRITORY_GROUPS.filter(g => g.id === territoryId)
+        : TERRITORY_GROUPS;
+
+      for (const group of groupsToCheck) {
         // GA4 sessions YoY
         if (group.ga4Territories.length > 0) {
           const [currentRow] = await db
@@ -300,26 +305,31 @@ export const analyticsRouter = router({
           const current = Number(currentRow?.sessions || 0);
           const prev = Number(prevRow?.sessions || 0);
 
-          if (prev >= 100) {
+          // Lower thresholds for territory-specific view to show more granular insights
+          const minPrev = territoryId ? 50 : 100;
+          const dropThreshold = territoryId ? -10 : -20;
+          const growthThreshold = territoryId ? 15 : 30;
+
+          if (prev >= minPrev) {
             const pct = ((current - prev) / prev) * 100;
-            if (pct <= -20) {
+            if (pct <= dropThreshold) {
               insights.push({
                 type: "warning",
                 territory: group.name,
                 territoryId: group.id,
                 metric: "sessions",
-                message: `${group.name} sessions dropped ${Math.abs(pct).toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
+                message: `Sessions dropped ${Math.abs(pct).toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
                 currentValue: current,
                 previousValue: prev,
                 changePercent: pct,
               });
-            } else if (pct >= 30) {
+            } else if (pct >= growthThreshold) {
               insights.push({
                 type: "success",
                 territory: group.name,
                 territoryId: group.id,
                 metric: "sessions",
-                message: `${group.name} sessions grew ${pct.toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
+                message: `Sessions grew ${pct.toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
                 currentValue: current,
                 previousValue: prev,
                 changePercent: pct,
@@ -365,26 +375,29 @@ export const analyticsRouter = router({
             const current = Number(row.value);
             const pct = ((current - prev) / prev) * 100;
 
-            if (pct <= -30) {
+            const gbpDropThreshold = territoryId ? -15 : -30;
+            const gbpGrowthThreshold = territoryId ? 25 : 50;
+
+            if (pct <= gbpDropThreshold) {
               const metricLabel = row.metricType === "calls" ? "calls" : row.metricType === "website_clicks" ? "website clicks" : "direction requests";
               insights.push({
                 type: "warning",
                 territory: group.name,
                 territoryId: group.id,
                 metric: row.metricType,
-                message: `${group.name} GBP ${metricLabel} dropped ${Math.abs(pct).toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
+                message: `GBP ${metricLabel} dropped ${Math.abs(pct).toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
                 currentValue: current,
                 previousValue: prev,
                 changePercent: pct,
               });
-            } else if (pct >= 50) {
+            } else if (pct >= gbpGrowthThreshold) {
               const metricLabel = row.metricType === "calls" ? "calls" : row.metricType === "website_clicks" ? "website clicks" : "direction requests";
               insights.push({
                 type: "success",
                 territory: group.name,
                 territoryId: group.id,
                 metric: row.metricType,
-                message: `${group.name} GBP ${metricLabel} grew ${pct.toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
+                message: `GBP ${metricLabel} grew ${pct.toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
                 currentValue: current,
                 previousValue: prev,
                 changePercent: pct,
@@ -397,6 +410,10 @@ export const analyticsRouter = router({
       // Sort by absolute change (biggest anomalies first)
       insights.sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
 
+      // When filtering to a single territory, lower the thresholds to show more granular insights
+      if (territoryId) {
+        return insights.slice(0, 10);
+      }
       return insights.slice(0, 10); // Top 10 insights
     }),
 });
