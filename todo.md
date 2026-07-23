@@ -161,3 +161,8 @@
 - [x] YoY comparison view (this month vs same month last year)
 - [x] Route /analytics wired in App.tsx + sidebar nav
 - [x] Vitest tests for analytics procedures
+
+## Analytics Dashboard Enhancements (July 23)
+- [x] Automated insights panel at top of dashboard highlighting data anomalies (e.g., Milwaukee -40% sessions drop)
+- [x] CSV export button for YoY detail table and filtered chart data
+- [x] Detailed hover tooltips on charts showing exact numbers and dates for each data point

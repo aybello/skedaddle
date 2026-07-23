@@ -273,6 +273,156 @@ export const analyticsRouter = router({
     }),
 
   /**
+   * Get automated insights — detects significant anomalies across all territories.
+   * Looks for: large YoY drops/spikes in sessions, GBP metric changes, etc.
+   */
+  getInsights: publicProcedure
+    .input(z.object({
+      year: z.number(),
+      month: z.number().min(1).max(12),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const { year, month } = input;
+      const prevYear = year - 1;
+      const insights: Array<{
+        type: "warning" | "success" | "info";
+        territory: string;
+        metric: string;
+        message: string;
+        currentValue: number;
+        previousValue: number;
+        changePercent: number;
+      }> = [];
+
+      // Check GA4 sessions YoY for all territories
+      const currentGA4 = await db
+        .select({
+          territory: ga4Sessions.territory,
+          sessions: sql<number>`SUM(sessions)`,
+        })
+        .from(ga4Sessions)
+        .where(and(
+          eq(ga4Sessions.year, year),
+          eq(ga4Sessions.month, month),
+          eq(ga4Sessions.pageType, "total"),
+        ))
+        .groupBy(ga4Sessions.territory);
+
+      const prevGA4 = await db
+        .select({
+          territory: ga4Sessions.territory,
+          sessions: sql<number>`SUM(sessions)`,
+        })
+        .from(ga4Sessions)
+        .where(and(
+          eq(ga4Sessions.year, prevYear),
+          eq(ga4Sessions.month, month),
+          eq(ga4Sessions.pageType, "total"),
+        ))
+        .groupBy(ga4Sessions.territory);
+
+      const prevMap = new Map(prevGA4.map(r => [r.territory, Number(r.sessions)]));
+
+      for (const row of currentGA4) {
+        const prev = prevMap.get(row.territory);
+        if (!prev || prev < 100) continue; // skip territories with too little data
+        const current = Number(row.sessions);
+        const pct = ((current - prev) / prev) * 100;
+
+        if (pct <= -25) {
+          insights.push({
+            type: "warning",
+            territory: row.territory,
+            metric: "sessions",
+            message: `${row.territory} sessions dropped ${Math.abs(pct).toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
+            currentValue: current,
+            previousValue: prev,
+            changePercent: pct,
+          });
+        } else if (pct >= 40) {
+          insights.push({
+            type: "success",
+            territory: row.territory,
+            metric: "sessions",
+            message: `${row.territory} sessions grew ${pct.toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
+            currentValue: current,
+            previousValue: prev,
+            changePercent: pct,
+          });
+        }
+      }
+
+      // Check GBP calls YoY for all territories
+      const currentGBP = await db
+        .select({
+          territory: gbpMetrics.territory,
+          metricType: gbpMetrics.metricType,
+          value: sql<number>`SUM(value)`,
+        })
+        .from(gbpMetrics)
+        .where(and(
+          eq(gbpMetrics.year, year),
+          eq(gbpMetrics.month, month),
+        ))
+        .groupBy(gbpMetrics.territory, gbpMetrics.metricType);
+
+      const prevGBP = await db
+        .select({
+          territory: gbpMetrics.territory,
+          metricType: gbpMetrics.metricType,
+          value: sql<number>`SUM(value)`,
+        })
+        .from(gbpMetrics)
+        .where(and(
+          eq(gbpMetrics.year, prevYear),
+          eq(gbpMetrics.month, month),
+        ))
+        .groupBy(gbpMetrics.territory, gbpMetrics.metricType);
+
+      const prevGBPMap = new Map(prevGBP.map(r => [`${r.territory}:${r.metricType}`, Number(r.value)]));
+
+      for (const row of currentGBP) {
+        if (row.metricType === "total" || row.metricType === "bookings") continue;
+        const prev = prevGBPMap.get(`${row.territory}:${row.metricType}`);
+        if (!prev || prev < 20) continue;
+        const current = Number(row.value);
+        const pct = ((current - prev) / prev) * 100;
+
+        if (pct <= -30) {
+          const metricLabel = row.metricType === "calls" ? "calls" : row.metricType === "website_clicks" ? "website clicks" : "direction requests";
+          insights.push({
+            type: "warning",
+            territory: row.territory,
+            metric: row.metricType,
+            message: `${row.territory} GBP ${metricLabel} dropped ${Math.abs(pct).toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
+            currentValue: current,
+            previousValue: prev,
+            changePercent: pct,
+          });
+        } else if (pct >= 50) {
+          const metricLabel = row.metricType === "calls" ? "calls" : row.metricType === "website_clicks" ? "website clicks" : "direction requests";
+          insights.push({
+            type: "success",
+            territory: row.territory,
+            metric: row.metricType,
+            message: `${row.territory} GBP ${metricLabel} grew ${pct.toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
+            currentValue: current,
+            previousValue: prev,
+            changePercent: pct,
+          });
+        }
+      }
+
+      // Sort by absolute change (biggest anomalies first)
+      insights.sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
+
+      return insights.slice(0, 10); // Top 10 insights
+    }),
+
+  /**
    * Get summary KPIs for a territory — total sessions and GBP metrics for a given period.
    */
   getSummaryKPIs: publicProcedure

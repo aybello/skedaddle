@@ -1,12 +1,13 @@
 /**
  * Analytics.tsx — DashThis Replacement
  * Full analytics dashboard with GA4 sessions + GBP metrics,
- * territory switching, month/year filters, and YoY comparisons.
+ * territory switching, month/year filters, YoY comparisons,
+ * automated insights panel, CSV export, and detailed tooltips.
  */
 
 import PortalLayout from "@/components/PortalLayout";
 import { trpc } from "@/lib/trpc";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, Legend, Area, AreaChart,
@@ -14,6 +15,7 @@ import {
 import {
   TrendingUp, TrendingDown, Phone, MousePointer, MapPin, Activity,
   Calendar, ChevronDown, ArrowUpRight, ArrowDownRight, Minus,
+  AlertTriangle, CheckCircle, Info, Download, Lightbulb,
 } from "lucide-react";
 
 // ─── Colour Palette (Skedaddle brand) ────────────────────────────────────────
@@ -59,6 +61,21 @@ function DeltaIcon({ direction }: { direction: "up" | "down" | "flat" }) {
   return <Minus size={14} />;
 }
 
+// ─── CSV Export Helper ──────────────────────────────────────────────────────
+function downloadCSV(filename: string, headers: string[], rows: string[][]) {
+  const csvContent = [
+    headers.join(","),
+    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+  ].join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 // ─── KPI Card ────────────────────────────────────────────────────────────────
 function KpiCard({ icon: Icon, label, value, delta, color = SAGE }: {
   icon: React.ElementType;
@@ -86,18 +103,111 @@ function KpiCard({ icon: Icon, label, value, delta, color = SAGE }: {
   );
 }
 
-// ─── Chart Tooltip ───────────────────────────────────────────────────────────
-function ChartTooltip({ active, payload, label }: any) {
+// ─── Enhanced Chart Tooltip ─────────────────────────────────────────────────
+function EnhancedTooltip({ active, payload, label, chartType }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "#fff", border: `1px solid ${MIST}`, borderRadius: 6, padding: "10px 14px", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: FOREST, marginBottom: 4 }}>{label}</div>
+    <div style={{
+      background: "#fff",
+      border: `1px solid ${MIST}`,
+      borderRadius: 8,
+      padding: "12px 16px",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+      minWidth: 180,
+    }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: FOREST, marginBottom: 8, borderBottom: `1px solid ${MIST}`, paddingBottom: 6 }}>
+        {label}
+      </div>
       {payload.map((p: any, i: number) => (
-        <div key={i} style={{ fontSize: 11, color: p.color, display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: p.color, display: "inline-block" }} />
-          <span>{p.name}: <strong>{typeof p.value === "number" ? p.value.toLocaleString() : p.value}</strong></span>
+        <div key={i} style={{ fontSize: 12, color: "#444", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: "3px 0" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: p.color, display: "inline-block" }} />
+            <span style={{ fontWeight: 500 }}>{p.name}</span>
+          </span>
+          <span style={{ fontWeight: 700, color: FOREST, fontFamily: "Inter, sans-serif" }}>
+            {typeof p.value === "number" ? p.value.toLocaleString() : p.value}
+          </span>
         </div>
       ))}
+      {payload.length > 1 && (
+        <div style={{ fontSize: 11, color: "#888", marginTop: 6, paddingTop: 6, borderTop: `1px solid ${MIST}`, display: "flex", justifyContent: "space-between" }}>
+          <span>Total</span>
+          <span style={{ fontWeight: 600 }}>
+            {payload.reduce((sum: number, p: any) => sum + (typeof p.value === "number" ? p.value : 0), 0).toLocaleString()}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Insights Panel ─────────────────────────────────────────────────────────
+function InsightsPanel({ insights, isLoading }: { insights: any[] | undefined; isLoading: boolean }) {
+  if (isLoading) {
+    return (
+      <div style={{ background: "#fff", borderRadius: 10, border: `1px solid ${MIST}`, padding: "20px 24px", marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#888", fontSize: 13 }}>
+          <Lightbulb size={16} />
+          Analyzing data for anomalies...
+        </div>
+      </div>
+    );
+  }
+
+  if (!insights || insights.length === 0) {
+    return (
+      <div style={{ background: "#fff", borderRadius: 10, border: `1px solid ${MIST}`, padding: "20px 24px", marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, color: SAGE, fontSize: 13, fontWeight: 600 }}>
+          <CheckCircle size={16} />
+          No significant anomalies detected for this period.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: "#fff", borderRadius: 10, border: `1px solid ${MIST}`, padding: "20px 24px", marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+        <Lightbulb size={16} color={GOLD} />
+        <span style={{ fontSize: 13, fontWeight: 700, color: FOREST, fontFamily: "Inter, sans-serif" }}>
+          Automated Insights
+        </span>
+        <span style={{ fontSize: 11, color: "#888", marginLeft: 4 }}>
+          ({insights.length} anomal{insights.length === 1 ? "y" : "ies"} detected)
+        </span>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {insights.map((insight, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+              padding: "10px 14px",
+              borderRadius: 8,
+              background: insight.type === "warning" ? "#fef2f2" : insight.type === "success" ? "#f0fdf4" : "#f8fafc",
+              border: `1px solid ${insight.type === "warning" ? "#fecaca" : insight.type === "success" ? "#bbf7d0" : "#e2e8f0"}`,
+            }}
+          >
+            {insight.type === "warning" ? (
+              <AlertTriangle size={15} color="#dc2626" style={{ marginTop: 1, flexShrink: 0 }} />
+            ) : insight.type === "success" ? (
+              <TrendingUp size={15} color="#16a34a" style={{ marginTop: 1, flexShrink: 0 }} />
+            ) : (
+              <Info size={15} color="#64748b" style={{ marginTop: 1, flexShrink: 0 }} />
+            )}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: insight.type === "warning" ? "#991b1b" : insight.type === "success" ? "#166534" : "#334155" }}>
+                {insight.message}
+              </div>
+              <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
+                {insight.metric === "sessions" ? "GA4 Sessions" : "GBP Metric"} · {Math.abs(insight.changePercent).toFixed(0)}% {insight.changePercent > 0 ? "increase" : "decrease"} YoY
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -111,6 +221,12 @@ export default function Analytics() {
 
   // Fetch territories
   const { data: territories } = trpc.analytics.getTerritories.useQuery();
+
+  // Fetch insights
+  const { data: insights, isLoading: insightsLoading } = trpc.analytics.getInsights.useQuery({
+    year: selectedYear,
+    month: comparisonMonth,
+  });
 
   // Fetch GA4 trend data
   const { data: ga4Trend, isLoading: ga4Loading } = trpc.analytics.getMonthlyTrend.useQuery({
@@ -222,13 +338,50 @@ export default function Analytics() {
     };
   }, [yoyData]);
 
+  // ─── CSV Export handlers ───────────────────────────────────────────────────
+  const handleExportYoY = useCallback(() => {
+    if (!yoyKPIs) return;
+    const headers = ["Metric", `${MONTHS[comparisonMonth - 1]} ${selectedYear - 1}`, `${MONTHS[comparisonMonth - 1]} ${selectedYear}`, "Change %"];
+    const rows = Object.entries(yoyKPIs).map(([key, data]) => [
+      key === "clicks" ? "Website Clicks" : key.charAt(0).toUpperCase() + key.slice(1),
+      String(data.previous),
+      String(data.current),
+      data.delta.text,
+    ]);
+    downloadCSV(`yoy_${displayName(selectedGBPTerritory)}_${MONTHS[comparisonMonth - 1]}_${selectedYear}.csv`, headers, rows);
+  }, [yoyKPIs, selectedGBPTerritory, selectedYear, comparisonMonth]);
+
+  const handleExportGA4 = useCallback(() => {
+    if (!ga4ChartData.length) return;
+    const headers = ["Month", "Total Sessions", "Species Pages", "Blog Pages", "Location Pages"];
+    const rows = ga4ChartData.map((d: any) => [
+      d.name,
+      String(d.Total || 0),
+      String(d.Species || 0),
+      String(d.Blog || 0),
+      String(d.Location || 0),
+    ]);
+    downloadCSV(`ga4_sessions_${displayName(selectedGA4Territory)}_${selectedYear - 1}-${selectedYear}.csv`, headers, rows);
+  }, [ga4ChartData, selectedGA4Territory, selectedYear]);
+
+  const handleExportGBP = useCallback(() => {
+    if (!gbpChartData.length) return;
+    const headers = ["Month", "Calls", "Website Clicks", "Directions"];
+    const rows = gbpChartData.map((d: any) => [
+      d.name,
+      String(d.Calls || 0),
+      String(d["Website Clicks"] || 0),
+      String(d.Directions || 0),
+    ]);
+    downloadCSV(`gbp_metrics_${displayName(selectedGBPTerritory)}_${selectedYear - 1}-${selectedYear}.csv`, headers, rows);
+  }, [gbpChartData, selectedGBPTerritory, selectedYear]);
+
   // ─── Available years ────────────────────────────────────────────────────────
   const years = [2022, 2023, 2024, 2025, 2026];
 
-  // Filter GA4 territories to only show "parent" territories (not sub-cities)
+  // Filter GA4 territories
   const ga4TerritoryList = useMemo(() => {
     if (!territories?.ga4) return [];
-    // Show all but filter out month names and other artifacts
     const skipWords = new Set(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Month", "LOCATION 2022"]);
     return territories.ga4.filter(t => !skipWords.has(t));
   }, [territories]);
@@ -253,7 +406,7 @@ export default function Analytics() {
         </div>
 
         {/* ─── Filters Bar ─────────────────────────────────────────────────────── */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 28, padding: "16px 20px", background: "#fff", borderRadius: 10, border: `1px solid ${MIST}` }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 24, padding: "16px 20px", background: "#fff", borderRadius: 10, border: `1px solid ${MIST}` }}>
           {/* GBP Territory */}
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <label style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#888" }}>GBP Territory</label>
@@ -311,6 +464,9 @@ export default function Analytics() {
           </div>
         </div>
 
+        {/* ─── Automated Insights Panel ────────────────────────────────────────── */}
+        <InsightsPanel insights={insights} isLoading={insightsLoading} />
+
         {/* ─── YoY KPI Cards ───────────────────────────────────────────────────── */}
         <div style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: FOREST, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
@@ -352,12 +508,30 @@ export default function Analytics() {
 
         {/* ─── GA4 Sessions Chart ──────────────────────────────────────────────── */}
         <div style={{ background: "#fff", borderRadius: 10, border: `1px solid ${MIST}`, padding: "24px 20px", marginBottom: 28 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: FOREST, marginBottom: 4, fontFamily: "'Playfair Display', serif" }}>
-            Website Sessions
-          </h2>
-          <p style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
-            GA4 sessions by page type — {displayName(selectedGA4Territory)} ({selectedYear - 1}–{selectedYear})
-          </p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+            <div>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: FOREST, marginBottom: 4, fontFamily: "'Playfair Display', serif" }}>
+                Website Sessions
+              </h2>
+              <p style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
+                GA4 sessions by page type — {displayName(selectedGA4Territory)} ({selectedYear - 1}–{selectedYear})
+              </p>
+            </div>
+            <button
+              onClick={handleExportGA4}
+              disabled={ga4ChartData.length === 0}
+              style={{
+                display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
+                borderRadius: 6, border: `1px solid ${MIST}`, background: CREAM,
+                fontSize: 11, fontWeight: 600, color: SAGE, cursor: "pointer",
+                opacity: ga4ChartData.length === 0 ? 0.5 : 1,
+                transition: "opacity 0.15s",
+              }}
+              title="Export GA4 data as CSV"
+            >
+              <Download size={12} /> Export CSV
+            </button>
+          </div>
           {ga4Loading ? (
             <div style={{ height: 280, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa" }}>Loading...</div>
           ) : ga4ChartData.length === 0 ? (
@@ -368,7 +542,7 @@ export default function Analytics() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
                 <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#888" }} />
                 <YAxis tick={{ fontSize: 10, fill: "#888" }} />
-                <Tooltip content={<ChartTooltip />} />
+                <Tooltip content={<EnhancedTooltip chartType="ga4" />} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Area type="monotone" dataKey="Total" stroke={SAGE} fill={SAGE + "30"} strokeWidth={2} name="Total Sessions" />
                 <Area type="monotone" dataKey="Species" stroke={GOLD} fill={GOLD + "20"} strokeWidth={1.5} name="Species Pages" />
@@ -381,12 +555,30 @@ export default function Analytics() {
 
         {/* ─── GBP Metrics Chart ───────────────────────────────────────────────── */}
         <div style={{ background: "#fff", borderRadius: 10, border: `1px solid ${MIST}`, padding: "24px 20px", marginBottom: 28 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: FOREST, marginBottom: 4, fontFamily: "'Playfair Display', serif" }}>
-            Google Business Profile
-          </h2>
-          <p style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
-            Monthly GBP interactions — {displayName(selectedGBPTerritory)} ({selectedYear - 1}–{selectedYear})
-          </p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+            <div>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: FOREST, marginBottom: 4, fontFamily: "'Playfair Display', serif" }}>
+                Google Business Profile
+              </h2>
+              <p style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
+                Monthly GBP interactions — {displayName(selectedGBPTerritory)} ({selectedYear - 1}–{selectedYear})
+              </p>
+            </div>
+            <button
+              onClick={handleExportGBP}
+              disabled={gbpChartData.length === 0}
+              style={{
+                display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
+                borderRadius: 6, border: `1px solid ${MIST}`, background: CREAM,
+                fontSize: 11, fontWeight: 600, color: SAGE, cursor: "pointer",
+                opacity: gbpChartData.length === 0 ? 0.5 : 1,
+                transition: "opacity 0.15s",
+              }}
+              title="Export GBP data as CSV"
+            >
+              <Download size={12} /> Export CSV
+            </button>
+          </div>
           {gbpLoading ? (
             <div style={{ height: 280, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa" }}>Loading...</div>
           ) : gbpChartData.length === 0 ? (
@@ -397,7 +589,7 @@ export default function Analytics() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
                 <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#888" }} />
                 <YAxis tick={{ fontSize: 10, fill: "#888" }} />
-                <Tooltip content={<ChartTooltip />} />
+                <Tooltip content={<EnhancedTooltip chartType="gbp" />} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="Calls" fill={SAGE} radius={[3, 3, 0, 0]} name="Calls" />
                 <Bar dataKey="Website Clicks" fill={GOLD} radius={[3, 3, 0, 0]} name="Website Clicks" />
@@ -410,12 +602,30 @@ export default function Analytics() {
         {/* ─── YoY Comparison Table ────────────────────────────────────────────── */}
         {yoyData && (
           <div style={{ background: "#fff", borderRadius: 10, border: `1px solid ${MIST}`, padding: "24px 20px", marginBottom: 28 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: FOREST, marginBottom: 4, fontFamily: "'Playfair Display', serif" }}>
-              Year-over-Year Detail
-            </h2>
-            <p style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>
-              {FULL_MONTHS[comparisonMonth - 1]} {selectedYear} vs {FULL_MONTHS[comparisonMonth - 1]} {selectedYear - 1} — {displayName(selectedGBPTerritory)}
-            </p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+              <div>
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: FOREST, marginBottom: 4, fontFamily: "'Playfair Display', serif" }}>
+                  Year-over-Year Detail
+                </h2>
+                <p style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>
+                  {FULL_MONTHS[comparisonMonth - 1]} {selectedYear} vs {FULL_MONTHS[comparisonMonth - 1]} {selectedYear - 1} — {displayName(selectedGBPTerritory)}
+                </p>
+              </div>
+              <button
+                onClick={handleExportYoY}
+                disabled={!yoyKPIs}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
+                  borderRadius: 6, border: `1px solid ${MIST}`, background: CREAM,
+                  fontSize: 11, fontWeight: 600, color: SAGE, cursor: "pointer",
+                  opacity: !yoyKPIs ? 0.5 : 1,
+                  transition: "opacity 0.15s",
+                }}
+                title="Export YoY comparison as CSV"
+              >
+                <Download size={12} /> Export CSV
+              </button>
+            </div>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: `2px solid ${MIST}` }}>
