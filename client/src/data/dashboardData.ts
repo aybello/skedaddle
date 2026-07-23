@@ -5456,9 +5456,9 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
               "jobs": 31
           },
           {
-              "suburb": "Lasalle",
-              "revenue": 32527.95,
-              "jobs": 23
+              "suburb": "LaSalle",
+              "revenue": 40813.85,
+              "jobs": 28
           },
           {
               "suburb": "Kingsville",
@@ -5468,11 +5468,6 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
           {
               "suburb": "Essex",
               "revenue": 12234.9,
-              "jobs": 5
-          },
-          {
-              "suburb": "LaSalle",
-              "revenue": 8285.9,
               "jobs": 5
           },
           {

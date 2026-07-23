@@ -207,3 +207,11 @@
 - [x] Generate corrected reports for all 15 remaining territories
 - [x] Update Home page to show all 19 territories (change filter from full-data to dashboard-ready)
 - [x] Update admin note text since all territories now have dashboards
+
+## Report Review Fixes (Jul 23, 2026)
+- [x] Remove per-species avg ticket column (all identical, misleading)
+- [x] Merge duplicate suburb entries (e.g., Lasalle/LaSalle in Windsor)
+- [x] Fix section numbering (sequential 01-10)
+- [x] Add note for newly activated GBP profiles (many zero months)
+- [x] Fix grammar: singular/plural suburb names in opportunity callouts
+- [x] Re-upload all 15 corrected reports
