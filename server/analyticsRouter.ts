@@ -1,38 +1,34 @@
 /**
  * analyticsRouter.ts — tRPC procedures for the DashThis replacement analytics dashboard.
  * Provides GA4 session data and GBP metrics with territory filtering, date ranges, and YoY comparisons.
+ * Uses the 19 parent territory groupings to aggregate sub-location data.
  */
 
 import { z } from "zod";
 import { publicProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { ga4Sessions, gbpMetrics } from "../drizzle/schema";
-import { eq, and, sql, inArray, between, desc } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
+import { TERRITORY_GROUPS, UNMAPPED_GA4, UNMAPPED_GBP, getSubLocations } from "../shared/territoryMapping";
 
 // ─── Procedures ──────────────────────────────────────────────────────────────
 
 export const analyticsRouter = router({
   /**
-   * Get all available territories that have analytics data.
-   * Returns separate lists for GA4 and GBP since they may differ.
+   * Get the 19 parent territories for the dropdowns.
+   * Also includes an "All Network" option and any unmapped territories as "Other".
    */
   getTerritories: publicProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) return { ga4: [], gbp: [] };
-
-    const ga4Territories = await db
-      .selectDistinct({ territory: ga4Sessions.territory })
-      .from(ga4Sessions)
-      .orderBy(ga4Sessions.territory);
-
-    const gbpTerritories = await db
-      .selectDistinct({ territory: gbpMetrics.territory })
-      .from(gbpMetrics)
-      .orderBy(gbpMetrics.territory);
+    const territories = TERRITORY_GROUPS.map(g => ({
+      id: g.id,
+      name: g.name,
+    }));
 
     return {
-      ga4: ga4Territories.map(r => r.territory),
-      gbp: gbpTerritories.map(r => r.territory),
+      territories,
+      // Keep raw lists available for drill-down
+      hasGA4: true,
+      hasGBP: true,
     };
   }),
 
@@ -64,167 +60,11 @@ export const analyticsRouter = router({
   }),
 
   /**
-   * Get GA4 session data for a territory with optional date filtering.
-   * Returns monthly data grouped by page type.
-   */
-  getGA4Sessions: publicProcedure
-    .input(z.object({
-      territory: z.string(),
-      year: z.number().optional(),
-      startMonth: z.number().min(1).max(12).optional(),
-      endMonth: z.number().min(1).max(12).optional(),
-    }))
-    .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) return [];
-
-      const conditions = [eq(ga4Sessions.territory, input.territory)];
-      if (input.year) {
-        conditions.push(eq(ga4Sessions.year, input.year));
-      }
-      if (input.startMonth) {
-        conditions.push(sql`${ga4Sessions.month} >= ${input.startMonth}`);
-      }
-      if (input.endMonth) {
-        conditions.push(sql`${ga4Sessions.month} <= ${input.endMonth}`);
-      }
-
-      const results = await db
-        .select()
-        .from(ga4Sessions)
-        .where(and(...conditions))
-        .orderBy(ga4Sessions.year, ga4Sessions.month);
-
-      return results;
-    }),
-
-  /**
-   * Get GBP metrics for a territory with optional date filtering.
-   */
-  getGBPMetrics: publicProcedure
-    .input(z.object({
-      territory: z.string(),
-      year: z.number().optional(),
-      startMonth: z.number().min(1).max(12).optional(),
-      endMonth: z.number().min(1).max(12).optional(),
-    }))
-    .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) return [];
-
-      const conditions = [eq(gbpMetrics.territory, input.territory)];
-      if (input.year) {
-        conditions.push(eq(gbpMetrics.year, input.year));
-      }
-      if (input.startMonth) {
-        conditions.push(sql`${gbpMetrics.month} >= ${input.startMonth}`);
-      }
-      if (input.endMonth) {
-        conditions.push(sql`${gbpMetrics.month} <= ${input.endMonth}`);
-      }
-
-      const results = await db
-        .select()
-        .from(gbpMetrics)
-        .where(and(...conditions))
-        .orderBy(gbpMetrics.year, gbpMetrics.month);
-
-      return results;
-    }),
-
-  /**
-   * Get YoY comparison for a specific month — compares current year to previous year.
-   * Returns KPI-style data: current value, previous value, delta percentage.
-   */
-  getYoYComparison: publicProcedure
-    .input(z.object({
-      territory: z.string(),
-      year: z.number(),
-      month: z.number().min(1).max(12),
-    }))
-    .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) return null;
-
-      const { territory, year, month } = input;
-      const prevYear = year - 1;
-
-      // GA4 sessions comparison
-      const currentGA4 = await db
-        .select({
-          pageType: ga4Sessions.pageType,
-          sessions: sql<number>`SUM(sessions)`,
-        })
-        .from(ga4Sessions)
-        .where(and(
-          eq(ga4Sessions.territory, territory),
-          eq(ga4Sessions.year, year),
-          eq(ga4Sessions.month, month),
-        ))
-        .groupBy(ga4Sessions.pageType);
-
-      const prevGA4 = await db
-        .select({
-          pageType: ga4Sessions.pageType,
-          sessions: sql<number>`SUM(sessions)`,
-        })
-        .from(ga4Sessions)
-        .where(and(
-          eq(ga4Sessions.territory, territory),
-          eq(ga4Sessions.year, prevYear),
-          eq(ga4Sessions.month, month),
-        ))
-        .groupBy(ga4Sessions.pageType);
-
-      // GBP metrics comparison
-      const currentGBP = await db
-        .select({
-          metricType: gbpMetrics.metricType,
-          value: sql<number>`SUM(value)`,
-        })
-        .from(gbpMetrics)
-        .where(and(
-          eq(gbpMetrics.territory, territory),
-          eq(gbpMetrics.year, year),
-          eq(gbpMetrics.month, month),
-        ))
-        .groupBy(gbpMetrics.metricType);
-
-      const prevGBP = await db
-        .select({
-          metricType: gbpMetrics.metricType,
-          value: sql<number>`SUM(value)`,
-        })
-        .from(gbpMetrics)
-        .where(and(
-          eq(gbpMetrics.territory, territory),
-          eq(gbpMetrics.year, prevYear),
-          eq(gbpMetrics.month, month),
-        ))
-        .groupBy(gbpMetrics.metricType);
-
-      return {
-        ga4: {
-          current: currentGA4,
-          previous: prevGA4,
-        },
-        gbp: {
-          current: currentGBP,
-          previous: prevGBP,
-        },
-        year,
-        prevYear,
-        month,
-      };
-    }),
-
-  /**
-   * Get monthly trend data for charts — returns all months for a territory
-   * within a year range, aggregated by page type (GA4) or metric type (GBP).
+   * Get monthly trend data for charts — aggregates all sub-locations under a parent territory.
    */
   getMonthlyTrend: publicProcedure
     .input(z.object({
-      territory: z.string(),
+      territoryId: z.string(),
       startYear: z.number(),
       endYear: z.number(),
       dataSource: z.enum(["ga4", "gbp"]),
@@ -232,6 +72,9 @@ export const analyticsRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
+
+      const subLocations = getSubLocations(input.territoryId, input.dataSource);
+      if (subLocations.length === 0) return [];
 
       if (input.dataSource === "ga4") {
         const results = await db
@@ -243,7 +86,7 @@ export const analyticsRouter = router({
           })
           .from(ga4Sessions)
           .where(and(
-            eq(ga4Sessions.territory, input.territory),
+            inArray(ga4Sessions.territory, subLocations),
             sql`${ga4Sessions.year} >= ${input.startYear}`,
             sql`${ga4Sessions.year} <= ${input.endYear}`,
           ))
@@ -261,7 +104,7 @@ export const analyticsRouter = router({
           })
           .from(gbpMetrics)
           .where(and(
-            eq(gbpMetrics.territory, input.territory),
+            inArray(gbpMetrics.territory, subLocations),
             sql`${gbpMetrics.year} >= ${input.startYear}`,
             sql`${gbpMetrics.year} <= ${input.endYear}`,
           ))
@@ -273,178 +116,113 @@ export const analyticsRouter = router({
     }),
 
   /**
-   * Get automated insights — detects significant anomalies across all territories.
-   * Looks for: large YoY drops/spikes in sessions, GBP metric changes, etc.
+   * Get YoY comparison for a specific month — compares current year to previous year.
+   * Aggregates all sub-locations under the parent territory.
    */
-  getInsights: publicProcedure
+  getYoYComparison: publicProcedure
     .input(z.object({
+      territoryId: z.string(),
       year: z.number(),
       month: z.number().min(1).max(12),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
-      if (!db) return [];
+      if (!db) return null;
 
-      const { year, month } = input;
+      const { territoryId, year, month } = input;
       const prevYear = year - 1;
-      const insights: Array<{
-        type: "warning" | "success" | "info";
-        territory: string;
-        metric: string;
-        message: string;
-        currentValue: number;
-        previousValue: number;
-        changePercent: number;
-      }> = [];
+      const ga4Subs = getSubLocations(territoryId, "ga4");
+      const gbpSubs = getSubLocations(territoryId, "gbp");
 
-      // Check GA4 sessions YoY for all territories
-      const currentGA4 = await db
+      // GA4 sessions comparison (aggregated across sub-locations)
+      const currentGA4 = ga4Subs.length > 0 ? await db
         .select({
-          territory: ga4Sessions.territory,
+          pageType: ga4Sessions.pageType,
           sessions: sql<number>`SUM(sessions)`,
         })
         .from(ga4Sessions)
         .where(and(
+          inArray(ga4Sessions.territory, ga4Subs),
           eq(ga4Sessions.year, year),
           eq(ga4Sessions.month, month),
-          eq(ga4Sessions.pageType, "total"),
         ))
-        .groupBy(ga4Sessions.territory);
+        .groupBy(ga4Sessions.pageType) : [];
 
-      const prevGA4 = await db
+      const prevGA4 = ga4Subs.length > 0 ? await db
         .select({
-          territory: ga4Sessions.territory,
+          pageType: ga4Sessions.pageType,
           sessions: sql<number>`SUM(sessions)`,
         })
         .from(ga4Sessions)
         .where(and(
+          inArray(ga4Sessions.territory, ga4Subs),
           eq(ga4Sessions.year, prevYear),
           eq(ga4Sessions.month, month),
-          eq(ga4Sessions.pageType, "total"),
         ))
-        .groupBy(ga4Sessions.territory);
+        .groupBy(ga4Sessions.pageType) : [];
 
-      const prevMap = new Map(prevGA4.map(r => [r.territory, Number(r.sessions)]));
-
-      for (const row of currentGA4) {
-        const prev = prevMap.get(row.territory);
-        if (!prev || prev < 100) continue; // skip territories with too little data
-        const current = Number(row.sessions);
-        const pct = ((current - prev) / prev) * 100;
-
-        if (pct <= -25) {
-          insights.push({
-            type: "warning",
-            territory: row.territory,
-            metric: "sessions",
-            message: `${row.territory} sessions dropped ${Math.abs(pct).toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
-            currentValue: current,
-            previousValue: prev,
-            changePercent: pct,
-          });
-        } else if (pct >= 40) {
-          insights.push({
-            type: "success",
-            territory: row.territory,
-            metric: "sessions",
-            message: `${row.territory} sessions grew ${pct.toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
-            currentValue: current,
-            previousValue: prev,
-            changePercent: pct,
-          });
-        }
-      }
-
-      // Check GBP calls YoY for all territories
-      const currentGBP = await db
+      // GBP metrics comparison (aggregated across sub-locations)
+      const currentGBP = gbpSubs.length > 0 ? await db
         .select({
-          territory: gbpMetrics.territory,
           metricType: gbpMetrics.metricType,
           value: sql<number>`SUM(value)`,
         })
         .from(gbpMetrics)
         .where(and(
+          inArray(gbpMetrics.territory, gbpSubs),
           eq(gbpMetrics.year, year),
           eq(gbpMetrics.month, month),
         ))
-        .groupBy(gbpMetrics.territory, gbpMetrics.metricType);
+        .groupBy(gbpMetrics.metricType) : [];
 
-      const prevGBP = await db
+      const prevGBP = gbpSubs.length > 0 ? await db
         .select({
-          territory: gbpMetrics.territory,
           metricType: gbpMetrics.metricType,
           value: sql<number>`SUM(value)`,
         })
         .from(gbpMetrics)
         .where(and(
+          inArray(gbpMetrics.territory, gbpSubs),
           eq(gbpMetrics.year, prevYear),
           eq(gbpMetrics.month, month),
         ))
-        .groupBy(gbpMetrics.territory, gbpMetrics.metricType);
+        .groupBy(gbpMetrics.metricType) : [];
 
-      const prevGBPMap = new Map(prevGBP.map(r => [`${r.territory}:${r.metricType}`, Number(r.value)]));
-
-      for (const row of currentGBP) {
-        if (row.metricType === "total" || row.metricType === "bookings") continue;
-        const prev = prevGBPMap.get(`${row.territory}:${row.metricType}`);
-        if (!prev || prev < 20) continue;
-        const current = Number(row.value);
-        const pct = ((current - prev) / prev) * 100;
-
-        if (pct <= -30) {
-          const metricLabel = row.metricType === "calls" ? "calls" : row.metricType === "website_clicks" ? "website clicks" : "direction requests";
-          insights.push({
-            type: "warning",
-            territory: row.territory,
-            metric: row.metricType,
-            message: `${row.territory} GBP ${metricLabel} dropped ${Math.abs(pct).toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
-            currentValue: current,
-            previousValue: prev,
-            changePercent: pct,
-          });
-        } else if (pct >= 50) {
-          const metricLabel = row.metricType === "calls" ? "calls" : row.metricType === "website_clicks" ? "website clicks" : "direction requests";
-          insights.push({
-            type: "success",
-            territory: row.territory,
-            metric: row.metricType,
-            message: `${row.territory} GBP ${metricLabel} grew ${pct.toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
-            currentValue: current,
-            previousValue: prev,
-            changePercent: pct,
-          });
-        }
-      }
-
-      // Sort by absolute change (biggest anomalies first)
-      insights.sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
-
-      return insights.slice(0, 10); // Top 10 insights
+      return {
+        ga4: { current: currentGA4, previous: prevGA4 },
+        gbp: { current: currentGBP, previous: prevGBP },
+        year,
+        prevYear,
+        month,
+      };
     }),
 
   /**
    * Get summary KPIs for a territory — total sessions and GBP metrics for a given period.
+   * Aggregates all sub-locations under the parent territory.
    */
   getSummaryKPIs: publicProcedure
     .input(z.object({
-      territory: z.string(),
+      territoryId: z.string(),
       year: z.number(),
-      month: z.number().min(1).max(12).optional(), // if omitted, returns full year
+      month: z.number().min(1).max(12).optional(),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return null;
 
-      const { territory, year, month } = input;
+      const { territoryId, year, month } = input;
+      const ga4Subs = getSubLocations(territoryId, "ga4");
+      const gbpSubs = getSubLocations(territoryId, "gbp");
 
-      const ga4Conditions = [
-        eq(ga4Sessions.territory, territory),
+      const ga4Conditions: any[] = [
+        inArray(ga4Sessions.territory, ga4Subs.length > 0 ? ga4Subs : [""]),
         eq(ga4Sessions.year, year),
       ];
       if (month) ga4Conditions.push(eq(ga4Sessions.month, month));
 
-      const gbpConditions = [
-        eq(gbpMetrics.territory, territory),
+      const gbpConditions: any[] = [
+        inArray(gbpMetrics.territory, gbpSubs.length > 0 ? gbpSubs : [""]),
         eq(gbpMetrics.year, year),
       ];
       if (month) gbpConditions.push(eq(gbpMetrics.month, month));
@@ -467,5 +245,158 @@ export const analyticsRouter = router({
         totalSessions: ga4Summary?.total || 0,
         gbp: Object.fromEntries(gbpSummary.map(r => [r.metricType, r.total])),
       };
+    }),
+
+  /**
+   * Get automated insights — detects significant anomalies across all 19 parent territories.
+   * Aggregates sub-locations before comparing YoY.
+   */
+  getInsights: publicProcedure
+    .input(z.object({
+      year: z.number(),
+      month: z.number().min(1).max(12),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const { year, month } = input;
+      const prevYear = year - 1;
+      const insights: Array<{
+        type: "warning" | "success" | "info";
+        territory: string;
+        territoryId: string;
+        metric: string;
+        message: string;
+        currentValue: number;
+        previousValue: number;
+        changePercent: number;
+      }> = [];
+
+      // Check each of the 19 territories
+      for (const group of TERRITORY_GROUPS) {
+        // GA4 sessions YoY
+        if (group.ga4Territories.length > 0) {
+          const [currentRow] = await db
+            .select({ sessions: sql<number>`SUM(sessions)` })
+            .from(ga4Sessions)
+            .where(and(
+              inArray(ga4Sessions.territory, group.ga4Territories),
+              eq(ga4Sessions.year, year),
+              eq(ga4Sessions.month, month),
+              eq(ga4Sessions.pageType, "total"),
+            ));
+
+          const [prevRow] = await db
+            .select({ sessions: sql<number>`SUM(sessions)` })
+            .from(ga4Sessions)
+            .where(and(
+              inArray(ga4Sessions.territory, group.ga4Territories),
+              eq(ga4Sessions.year, prevYear),
+              eq(ga4Sessions.month, month),
+              eq(ga4Sessions.pageType, "total"),
+            ));
+
+          const current = Number(currentRow?.sessions || 0);
+          const prev = Number(prevRow?.sessions || 0);
+
+          if (prev >= 100) {
+            const pct = ((current - prev) / prev) * 100;
+            if (pct <= -20) {
+              insights.push({
+                type: "warning",
+                territory: group.name,
+                territoryId: group.id,
+                metric: "sessions",
+                message: `${group.name} sessions dropped ${Math.abs(pct).toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
+                currentValue: current,
+                previousValue: prev,
+                changePercent: pct,
+              });
+            } else if (pct >= 30) {
+              insights.push({
+                type: "success",
+                territory: group.name,
+                territoryId: group.id,
+                metric: "sessions",
+                message: `${group.name} sessions grew ${pct.toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
+                currentValue: current,
+                previousValue: prev,
+                changePercent: pct,
+              });
+            }
+          }
+        }
+
+        // GBP calls YoY
+        if (group.gbpTerritories.length > 0) {
+          const currentGBP = await db
+            .select({
+              metricType: gbpMetrics.metricType,
+              value: sql<number>`SUM(value)`,
+            })
+            .from(gbpMetrics)
+            .where(and(
+              inArray(gbpMetrics.territory, group.gbpTerritories),
+              eq(gbpMetrics.year, year),
+              eq(gbpMetrics.month, month),
+            ))
+            .groupBy(gbpMetrics.metricType);
+
+          const prevGBPData = await db
+            .select({
+              metricType: gbpMetrics.metricType,
+              value: sql<number>`SUM(value)`,
+            })
+            .from(gbpMetrics)
+            .where(and(
+              inArray(gbpMetrics.territory, group.gbpTerritories),
+              eq(gbpMetrics.year, prevYear),
+              eq(gbpMetrics.month, month),
+            ))
+            .groupBy(gbpMetrics.metricType);
+
+          const prevGBPMap = new Map(prevGBPData.map(r => [r.metricType, Number(r.value)]));
+
+          for (const row of currentGBP) {
+            if (row.metricType === "total" || row.metricType === "bookings") continue;
+            const prev = prevGBPMap.get(row.metricType);
+            if (!prev || prev < 15) continue;
+            const current = Number(row.value);
+            const pct = ((current - prev) / prev) * 100;
+
+            if (pct <= -30) {
+              const metricLabel = row.metricType === "calls" ? "calls" : row.metricType === "website_clicks" ? "website clicks" : "direction requests";
+              insights.push({
+                type: "warning",
+                territory: group.name,
+                territoryId: group.id,
+                metric: row.metricType,
+                message: `${group.name} GBP ${metricLabel} dropped ${Math.abs(pct).toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
+                currentValue: current,
+                previousValue: prev,
+                changePercent: pct,
+              });
+            } else if (pct >= 50) {
+              const metricLabel = row.metricType === "calls" ? "calls" : row.metricType === "website_clicks" ? "website clicks" : "direction requests";
+              insights.push({
+                type: "success",
+                territory: group.name,
+                territoryId: group.id,
+                metric: row.metricType,
+                message: `${group.name} GBP ${metricLabel} grew ${pct.toFixed(0)}% (${prev.toLocaleString()} → ${current.toLocaleString()})`,
+                currentValue: current,
+                previousValue: prev,
+                changePercent: pct,
+              });
+            }
+          }
+        }
+      }
+
+      // Sort by absolute change (biggest anomalies first)
+      insights.sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
+
+      return insights.slice(0, 10); // Top 10 insights
     }),
 });

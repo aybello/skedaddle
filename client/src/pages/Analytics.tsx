@@ -239,12 +239,11 @@ function InsightsPanel({ insights, isLoading }: { insights: any[] | undefined; i
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function Analytics() {
-  const [selectedGBPTerritory, setSelectedGBPTerritory] = useState("Hamilton");
-  const [selectedGA4Territory, setSelectedGA4Territory] = useState("Hamilton");
+  const [selectedTerritory, setSelectedTerritory] = useState("hamilton");
   const [selectedYear, setSelectedYear] = useState(2025);
   const [comparisonMonth, setComparisonMonth] = useState(6); // June
 
-  // Fetch territories
+  // Fetch territories (19 parent territories)
   const { data: territories } = trpc.analytics.getTerritories.useQuery();
 
   // Fetch insights
@@ -253,17 +252,17 @@ export default function Analytics() {
     month: comparisonMonth,
   });
 
-  // Fetch GA4 trend data
+  // Fetch GA4 trend data (aggregated across sub-locations)
   const { data: ga4Trend, isLoading: ga4Loading } = trpc.analytics.getMonthlyTrend.useQuery({
-    territory: selectedGA4Territory,
+    territoryId: selectedTerritory,
     startYear: selectedYear - 1,
     endYear: selectedYear,
     dataSource: "ga4",
   });
 
-  // Fetch GBP trend data
+  // Fetch GBP trend data (aggregated across sub-locations)
   const { data: gbpTrend, isLoading: gbpLoading } = trpc.analytics.getMonthlyTrend.useQuery({
-    territory: selectedGBPTerritory,
+    territoryId: selectedTerritory,
     startYear: selectedYear - 1,
     endYear: selectedYear,
     dataSource: "gbp",
@@ -271,17 +270,23 @@ export default function Analytics() {
 
   // Fetch YoY comparison
   const { data: yoyData } = trpc.analytics.getYoYComparison.useQuery({
-    territory: selectedGBPTerritory,
+    territoryId: selectedTerritory,
     year: selectedYear,
     month: comparisonMonth,
   });
 
   // Fetch summary KPIs
   const { data: summaryKPIs } = trpc.analytics.getSummaryKPIs.useQuery({
-    territory: selectedGBPTerritory,
+    territoryId: selectedTerritory,
     year: selectedYear,
     month: comparisonMonth,
   });
+
+  // Get display name for selected territory
+  const selectedTerritoryName = useMemo(() => {
+    const t = territories?.territories.find((t: any) => t.id === selectedTerritory);
+    return t?.name || selectedTerritory;
+  }, [territories, selectedTerritory]);
 
   // ─── Transform GA4 data for chart ───────────────────────────────────────────
   const ga4ChartData = useMemo(() => {
@@ -373,8 +378,8 @@ export default function Analytics() {
       String(data.current),
       data.delta.text,
     ]);
-    downloadCSV(`yoy_${displayName(selectedGBPTerritory)}_${MONTHS[comparisonMonth - 1]}_${selectedYear}.csv`, headers, rows);
-  }, [yoyKPIs, selectedGBPTerritory, selectedYear, comparisonMonth]);
+    downloadCSV(`yoy_${selectedTerritoryName}_${MONTHS[comparisonMonth - 1]}_${selectedYear}.csv`, headers, rows);
+  }, [yoyKPIs, selectedTerritoryName, selectedYear, comparisonMonth]);
 
   const handleExportGA4 = useCallback(() => {
     if (!ga4ChartData.length) return;
@@ -386,8 +391,8 @@ export default function Analytics() {
       String(d.Blog || 0),
       String(d.Location || 0),
     ]);
-    downloadCSV(`ga4_sessions_${displayName(selectedGA4Territory)}_${selectedYear - 1}-${selectedYear}.csv`, headers, rows);
-  }, [ga4ChartData, selectedGA4Territory, selectedYear]);
+    downloadCSV(`ga4_sessions_${selectedTerritoryName}_${selectedYear - 1}-${selectedYear}.csv`, headers, rows);
+  }, [ga4ChartData, selectedTerritoryName, selectedYear]);
 
   const handleExportGBP = useCallback(() => {
     if (!gbpChartData.length) return;
@@ -398,20 +403,14 @@ export default function Analytics() {
       String(d["Website Clicks"] || 0),
       String(d.Directions || 0),
     ]);
-    downloadCSV(`gbp_metrics_${displayName(selectedGBPTerritory)}_${selectedYear - 1}-${selectedYear}.csv`, headers, rows);
-  }, [gbpChartData, selectedGBPTerritory, selectedYear]);
+    downloadCSV(`gbp_metrics_${selectedTerritoryName}_${selectedYear - 1}-${selectedYear}.csv`, headers, rows);
+  }, [gbpChartData, selectedTerritoryName, selectedYear]);
 
   // ─── Available years ────────────────────────────────────────────────────────
   const years = [2022, 2023, 2024, 2025, 2026];
 
-  // Filter GA4 territories
-  const ga4TerritoryList = useMemo(() => {
-    if (!territories?.ga4) return [];
-    const skipWords = new Set(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Month", "LOCATION 2022"]);
-    return territories.ga4.filter(t => !skipWords.has(t));
-  }, [territories]);
-
-  const gbpTerritoryList = territories?.gbp || [];
+  // Territory list from the 19 parent territories
+  const territoryList = territories?.territories || [];
 
   return (
     <PortalLayout>
@@ -432,30 +431,16 @@ export default function Analytics() {
 
         {/* ─── Filters Bar ─────────────────────────────────────────────────────── */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 24, padding: "16px 20px", background: "#fff", borderRadius: 10, border: `1px solid ${MIST}` }}>
-          {/* GBP Territory */}
+          {/* Territory (single dropdown for all 19 franchises) */}
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <label style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#888" }}>GBP Territory</label>
+            <label style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#888" }}>Territory</label>
             <select
-              value={selectedGBPTerritory}
-              onChange={(e) => setSelectedGBPTerritory(e.target.value)}
-              style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${MIST}`, fontSize: 13, fontWeight: 500, color: FOREST, background: CREAM, cursor: "pointer", minWidth: 160 }}
+              value={selectedTerritory}
+              onChange={(e) => setSelectedTerritory(e.target.value)}
+              style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${MIST}`, fontSize: 13, fontWeight: 500, color: FOREST, background: CREAM, cursor: "pointer", minWidth: 200 }}
             >
-              {gbpTerritoryList.map(t => (
-                <option key={t} value={t}>{displayName(t)}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* GA4 Territory */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <label style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#888" }}>GA4 Territory</label>
-            <select
-              value={selectedGA4Territory}
-              onChange={(e) => setSelectedGA4Territory(e.target.value)}
-              style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${MIST}`, fontSize: 13, fontWeight: 500, color: FOREST, background: CREAM, cursor: "pointer", minWidth: 160 }}
-            >
-              {ga4TerritoryList.map(t => (
-                <option key={t} value={t}>{displayName(t)}</option>
+              {territoryList.map((t: any) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
           </div>
@@ -494,7 +479,7 @@ export default function Analytics() {
           <h2 style={{ fontSize: 14, fontWeight: 700, color: FOREST, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
             <Calendar size={15} color={SAGE} />
             {FULL_MONTHS[comparisonMonth - 1]} {selectedYear} vs {FULL_MONTHS[comparisonMonth - 1]} {selectedYear - 1}
-            <span style={{ fontSize: 11, fontWeight: 400, color: "#888", marginLeft: 4 }}>({displayName(selectedGBPTerritory)})</span>
+            <span style={{ fontSize: 11, fontWeight: 400, color: "#888", marginLeft: 4 }}>({selectedTerritoryName})</span>
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
             <KpiCard
@@ -536,7 +521,7 @@ export default function Analytics() {
                 Website Sessions
               </h2>
               <p style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
-                GA4 sessions by page type — {displayName(selectedGA4Territory)} ({selectedYear - 1}–{selectedYear})
+                GA4 sessions by page type — {selectedTerritoryName} ({selectedYear - 1}–{selectedYear})
               </p>
             </div>
             <button
@@ -583,7 +568,7 @@ export default function Analytics() {
                 Google Business Profile
               </h2>
               <p style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
-                Monthly GBP interactions — {displayName(selectedGBPTerritory)} ({selectedYear - 1}–{selectedYear})
+                Monthly GBP interactions — {selectedTerritoryName} ({selectedYear - 1}–{selectedYear})
               </p>
             </div>
             <button
@@ -630,7 +615,7 @@ export default function Analytics() {
                   Year-over-Year Detail
                 </h2>
                 <p style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>
-                  {FULL_MONTHS[comparisonMonth - 1]} {selectedYear} vs {FULL_MONTHS[comparisonMonth - 1]} {selectedYear - 1} — {displayName(selectedGBPTerritory)}
+                  {FULL_MONTHS[comparisonMonth - 1]} {selectedYear} vs {FULL_MONTHS[comparisonMonth - 1]} {selectedYear - 1} — {selectedTerritoryName}
                 </p>
               </div>
               <button

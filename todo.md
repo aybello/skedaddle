@@ -166,3 +166,9 @@
 - [x] Automated insights panel at top of dashboard highlighting data anomalies (e.g., Milwaukee -40% sessions drop)
 - [x] CSV export button for YoY detail table and filtered chart data
 - [x] Detailed hover tooltips on charts showing exact numbers and dates for each data point
+
+## Territory Grouping (July 23)
+- [x] Define 19 parent territory → sub-location mapping (shared constant)
+- [x] Update analytics backend to aggregate sub-locations under parent territories
+- [x] Update frontend dropdowns to show 19 parent territories instead of raw sub-locations
+- [ ] Allow drill-down into sub-locations within a selected territory (future enhancement)

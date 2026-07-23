@@ -28,14 +28,14 @@ describe("analyticsRouter", () => {
     expect(mod.analyticsRouter._def.procedures.getDateRange).toBeDefined();
   });
 
-  it("should have getGA4Sessions procedure", async () => {
+  it("should have getMonthlyTrend procedure", async () => {
     const mod = await import("./analyticsRouter");
-    expect(mod.analyticsRouter._def.procedures.getGA4Sessions).toBeDefined();
+    expect(mod.analyticsRouter._def.procedures.getMonthlyTrend).toBeDefined();
   });
 
-  it("should have getGBPMetrics procedure", async () => {
+  it("should have getInsights procedure", async () => {
     const mod = await import("./analyticsRouter");
-    expect(mod.analyticsRouter._def.procedures.getGBPMetrics).toBeDefined();
+    expect(mod.analyticsRouter._def.procedures.getInsights).toBeDefined();
   });
 
   it("should have getYoYComparison procedure", async () => {
