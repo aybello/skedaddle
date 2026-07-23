@@ -163,15 +163,6 @@ export default function Login() {
           style={{ color: "oklch(0.55 0.06 80)", fontFamily: "Inter, sans-serif" }}
         >
           Access is restricted to authorised franchise owners and Skedaddle staff.
-          <br />
-          Contact{" "}
-          <a
-            href="mailto:dave@skedaddlewildlife.com"
-            style={{ color: "oklch(0.72 0.08 80)" }}
-          >
-            dave@skedaddlewildlife.com
-          </a>{" "}
-          for access.
         </p>
       </div>
     </div>
