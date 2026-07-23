@@ -10,10 +10,12 @@ import { DASHBOARD_DATA, type LocationDashboard } from "@/data/dashboardData";
 import { useEffect } from "react";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-const fmt$ = (n: number) =>
-  n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M`
-  : n >= 1_000   ? `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
-  : `$${n.toFixed(0)}`;
+const fmt$ = (n: number, currency?: "CAD" | "USD") => {
+  const suffix = currency ? ` ${currency}` : "";
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M${suffix}`;
+  if (n >= 1_000)     return `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}${suffix}`;
+  return `$${n.toFixed(0)}${suffix}`;
+};
 
 const fmtPct = (n: number) => n >= 0 ? `↑ +${n.toFixed(0)}%` : `↓ ${n.toFixed(0)}%`;
 
@@ -37,7 +39,7 @@ function generateActions(data: LocationDashboard, season: ReturnType<typeof getS
       priority: "🔥 High",
       priorityColor: "#b85c38",
       title: `Amplify ${topSpecies.species} content this month`,
-      detail: `${topSpecies.species} is the top revenue species at ${fmt$(topSpecies.total_revenue)} for ${data.name}. Post 3 additional ${topSpecies.species.toLowerCase()}-focused GBP updates this week and ensure the ${topSpecies.species.toLowerCase()} species page is linked from the location homepage.`,
+      detail: `${topSpecies.species} is the top revenue species at ${fmt$(topSpecies.total_revenue, data.currency)} for ${data.name}. Post 3 additional ${topSpecies.species.toLowerCase()}-focused GBP updates this week and ensure the ${topSpecies.species.toLowerCase()} species page is linked from the location homepage.`,
     });
   }
 
@@ -47,7 +49,7 @@ function generateActions(data: LocationDashboard, season: ReturnType<typeof getS
       priority: "🆕 New Opportunity",
       priorityColor: "#1a4a2e",
       title: `Create suburb pages for ${oppSuburbs.map((s: { suburb: string }) => s.suburb).join(" and ")}`,
-      detail: `${oppSuburbs.map((s: { suburb: string; revenue: number }) => `${s.suburb} (${fmt$(s.revenue)})`).join(" and ")} are top revenue suburbs. Use the Suburb Brief Generator to create content specs for dedicated species pages targeting these areas.`,
+      detail: `${oppSuburbs.map((s: { suburb: string; revenue: number }) => `${s.suburb} (${fmt$(s.revenue, data.currency)})`).join(" and ")} are top revenue suburbs. Use the Suburb Brief Generator to create content specs for dedicated species pages targeting these areas.`,
     });
   }
 
@@ -260,7 +262,7 @@ export default function TriggerReport() {
 
           {/* Header */}
           <div style={{ borderBottom: "3px solid #1a4a2e", paddingBottom: 20, marginBottom: 32 }}>
-            <div style={S.brand}>Unwired Web Solutions · Skedaddle Franchise Intelligence</div>
+            <div style={S.brand}>Skedaddle Franchise Intelligence</div>
             <div style={S.reportTitle}>Monthly Trigger Report — {data.name}</div>
             <div style={S.reportMeta}>{monthYear} · Generated {today}</div>
           </div>
@@ -273,8 +275,8 @@ export default function TriggerReport() {
           {/* KPI strip */}
           <div style={S.kpiStrip}>
             <div style={S.kpi}>
-              <div style={S.kpiLabel}>Total Revenue</div>
-              <div style={S.kpiValue}>{fmt$(data.total_revenue)}</div>
+              <div style={S.kpiLabel}>Total Revenue ({data.currency})</div>
+              <div style={S.kpiValue}>{fmt$(data.total_revenue, data.currency)}</div>
               <div style={S.kpiChange}>Trailing 12 months</div>
             </div>
             <div style={S.kpi}>
@@ -285,12 +287,12 @@ export default function TriggerReport() {
             <div style={S.kpi}>
               <div style={S.kpiLabel}>Top Species</div>
               <div style={S.kpiValue}>{data.species[0]?.species}</div>
-              <div style={S.kpiChange}>{fmt$(data.species[0]?.total_revenue || 0)} revenue</div>
+              <div style={S.kpiChange}>{fmt$(data.species[0]?.total_revenue || 0, data.currency)} revenue</div>
             </div>
             <div style={S.kpi}>
               <div style={S.kpiLabel}>Top Suburb</div>
               <div style={S.kpiValue}>{data.suburbs[0]?.suburb}</div>
-              <div style={S.kpiChange}>{fmt$(data.suburbs[0]?.revenue || 0)} revenue</div>
+              <div style={S.kpiChange}>{fmt$(data.suburbs[0]?.revenue || 0, data.currency)} revenue</div>
             </div>
           </div>
 
@@ -313,7 +315,7 @@ export default function TriggerReport() {
                   {data.species.map((s, i) => (
                     <tr key={i} className="trending">
                       <td style={S.td}>{s.species}</td>
-                      <td style={S.td}>{fmt$(s.total_revenue)}</td>
+                      <td style={S.td}>{fmt$(s.total_revenue, data.currency)}</td>
                       <td style={S.td}>{s.total_jobs || "—"}</td>
                       <td style={{ ...S.td, color: "#1a7a3e", fontWeight: 600 }}>
                         {i === 0 ? "↑ Top" : i < 3 ? "↑ Strong" : "→ Stable"}
@@ -342,7 +344,7 @@ export default function TriggerReport() {
                   {topSuburbs.map((s, i) => (
                     <tr key={i}>
                       <td style={S.td}>{s.suburb}</td>
-                      <td style={S.td}>{fmt$(s.revenue)}</td>
+                      <td style={S.td}>{fmt$(s.revenue, data.currency)}</td>
                       <td style={S.td}>{s.jobs}</td>
                     </tr>
                   ))}
@@ -353,7 +355,7 @@ export default function TriggerReport() {
               <ul style={{ paddingLeft: 18, fontFamily: "Arial, sans-serif", fontSize: 13 }}>
                 {newSuburbs.map((s, i) => (
                   <li key={i} style={{ marginBottom: 4 }}>
-                    <strong>{s.suburb}</strong> — first job recorded: {fmt$(s.revenue)}
+                    <strong>{s.suburb}</strong> — first job recorded: {fmt$(s.revenue, data.currency)}
                   </li>
                 ))}
               </ul>
@@ -380,7 +382,7 @@ export default function TriggerReport() {
 
           {/* Footer */}
           <div style={S.footer}>
-            <span>Unwired Web Solutions · abello@unwiredwebsolutions.com</span>
+            <span>Skedaddle Franchise Portal · skedaddle.manus.space</span>
             <span>Data source: Salesforce trailing period export · {monthYear}</span>
           </div>
 

@@ -55,26 +55,20 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     <div className="flex flex-col h-full">
       {/* Brand header */}
       <div
-        className="px-5 py-5 border-b"
-        style={{ borderColor: "oklch(0.28 0.09 145)" }}
+        className="px-4 py-4 border-b flex flex-col items-center"
+        style={{ borderColor: "oklch(0.28 0.09 145)", background: "oklch(0.18 0.07 145)" }}
       >
+        <img
+          src="/manus-storage/skedaddle_logo_234048c2.png"
+          alt="Skedaddle Humane Wildlife Control"
+          className="w-32 h-auto mb-2"
+          style={{ filter: "brightness(0) invert(1)" }}
+        />
         <div
-          className="text-xs font-semibold tracking-widest uppercase mb-0.5"
-          style={{ color: "oklch(0.65 0.08 80)", fontFamily: "Inter, sans-serif" }}
-        >
-          Unwired Web Solutions
-        </div>
-        <div
-          className="text-lg font-bold"
-          style={{ color: "oklch(0.97 0.012 80)", fontFamily: "'Playfair Display', Georgia, serif" }}
+          className="text-xs font-semibold tracking-widest uppercase"
+          style={{ color: "oklch(0.55 0.08 145)", fontFamily: "Inter, sans-serif" }}
         >
           Franchise Portal
-        </div>
-        <div
-          className="text-xs mt-0.5"
-          style={{ color: "oklch(0.60 0.06 80)", fontFamily: "Inter, sans-serif" }}
-        >
-          Skedaddle Wildlife Control
         </div>
       </div>
 

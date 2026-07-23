@@ -27,6 +27,7 @@ export interface GbpMonthly {
 export interface LocationDashboard {
   id: string;
   name: string;
+  currency: "CAD" | "USD";
   total_revenue: number;
   total_jobs: number;
   species: SpeciesData[];
@@ -48,6 +49,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "milwaukee": {
     "id": "milwaukee",
     "name": "Milwaukee",
+    "currency": "USD",
     "total_revenue": 967849.1499999999,
     "total_jobs": 420,
     "species": [
@@ -272,6 +274,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "madison": {
     "id": "madison",
     "name": "Madison",
+    "currency": "USD",
     "total_revenue": 828349.6499999999,
     "total_jobs": 283,
     "species": [
@@ -496,6 +499,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "hamilton": {
       "id": "hamilton",
       "name": "Hamilton",
+      "currency": "CAD",
       "total_revenue": 11306587.610000001,
       "total_jobs": 5921,
       "species": [
@@ -805,6 +809,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "durham": {
       "id": "durham",
       "name": "Durham",
+      "currency": "CAD",
       "total_revenue": 8881914.28,
       "total_jobs": 4766,
       "species": [
@@ -1114,6 +1119,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "ottawa": {
       "id": "ottawa",
       "name": "Ottawa",
+      "currency": "CAD",
       "total_revenue": 8108489.64,
       "total_jobs": 4266,
       "species": [
@@ -1423,6 +1429,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "minneapolis": {
       "id": "minneapolis",
       "name": "Minneapolis",
+      "currency": "USD",
       "total_revenue": 3248145.48,
       "total_jobs": 1923,
       "species": [
@@ -1732,6 +1739,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "montreal": {
       "id": "montreal",
       "name": "Montreal",
+      "currency": "CAD",
       "total_revenue": 2635677.11,
       "total_jobs": 2095,
       "species": [
@@ -2041,6 +2049,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "london": {
       "id": "london",
       "name": "London",
+      "currency": "CAD",
       "total_revenue": 2635754.499999999,
       "total_jobs": 1132,
       "species": [
@@ -2350,6 +2359,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "maryland-central": {
       "id": "maryland-central",
       "name": "Maryland Central",
+      "currency": "USD",
       "total_revenue": 1252082.65,
       "total_jobs": 801,
       "species": [
@@ -2659,6 +2669,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "barrie-north": {
       "id": "barrie-north",
       "name": "Barrie North",
+      "currency": "CAD",
       "total_revenue": 1345793.26,
       "total_jobs": 641,
       "species": [
@@ -2968,6 +2979,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "co-denver": {
       "id": "co-denver",
       "name": "Denver",
+      "currency": "USD",
       "total_revenue": 1179450.2,
       "total_jobs": 720,
       "species": [
@@ -3277,6 +3289,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "coquitlam": {
       "id": "coquitlam",
       "name": "Coquitlam",
+      "currency": "CAD",
       "total_revenue": 976311.97,
       "total_jobs": 405,
       "species": [
@@ -3586,6 +3599,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "atlanta-north": {
       "id": "atlanta-north",
       "name": "Atlanta North",
+      "currency": "USD",
       "total_revenue": 838821.16,
       "total_jobs": 521,
       "species": [
@@ -3895,6 +3909,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "orangeville": {
       "id": "orangeville",
       "name": "Orangeville",
+      "currency": "CAD",
       "total_revenue": 699640.17,
       "total_jobs": 458,
       "species": [
@@ -4204,6 +4219,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "oh-columbus": {
       "id": "oh-columbus",
       "name": "Columbus",
+      "currency": "USD",
       "total_revenue": 731626.3200000001,
       "total_jobs": 420,
       "species": [
@@ -4503,6 +4519,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "pa-pittsburgh": {
       "id": "pa-pittsburgh",
       "name": "Pittsburgh",
+      "currency": "USD",
       "total_revenue": 535794.95,
       "total_jobs": 199,
       "species": [
@@ -4792,6 +4809,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "md-baltimore": {
       "id": "md-baltimore",
       "name": "Baltimore",
+      "currency": "USD",
       "total_revenue": 492767.17,
       "total_jobs": 204,
       "species": [
@@ -5101,6 +5119,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "okanagan": {
       "id": "okanagan",
       "name": "Okanagan",
+      "currency": "CAD",
       "total_revenue": 389254.95,
       "total_jobs": 234,
       "species": [
@@ -5385,6 +5404,7 @@ export const DASHBOARD_DATA: Record<string, LocationDashboard> = {
   "l-windsor": {
       "id": "l-windsor",
       "name": "Windsor",
+      "currency": "CAD",
       "total_revenue": 144143.45,
       "total_jobs": 78,
       "species": [

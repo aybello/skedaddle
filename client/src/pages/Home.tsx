@@ -71,7 +71,7 @@ function LocationCard({ loc }: { loc: FranchiseLocation }) {
                 className="text-xs uppercase tracking-wider mb-0.5"
                 style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}
               >
-                T12 Revenue
+                T12 Revenue ({loc.country === "CA" ? "CAD" : "USD"})
               </div>
               <div
                 className="text-sm font-bold"

@@ -21,10 +21,12 @@ const RUST    = "#b85c38";
 const MIST    = "#e8ede9";
 const CHART_COLORS = [SAGE, GOLD, RUST, "#6b8f71", "#d4a843", "#8b4513", "#5a7a6a", "#c8a45a", "#9b6b4a", "#7a9e7e", "#e8b86d"];
 
-const fmt$ = (n: number) =>
-  n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M`
-  : n >= 1_000   ? `$${(n / 1_000).toFixed(1)}K`
-  : `$${n.toFixed(0)}`;
+const fmt$ = (n: number, currency?: "CAD" | "USD") => {
+  const suffix = currency ? ` ${currency}` : "";
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M${suffix}`;
+  if (n >= 1_000)     return `$${(n / 1_000).toFixed(1)}K${suffix}`;
+  return `$${n.toFixed(0)}${suffix}`;
+};
 
 const fmtN = (n: number) =>
   n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : `${n}`;
@@ -120,7 +122,7 @@ export default function PrintReport() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD, marginBottom: 6 }}>
-                  Unwired Web Solutions · Franchise Strategy Report
+                  Skedaddle Franchise Strategy Report
                 </div>
                 <h1 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 4px", fontFamily: "'Playfair Display', Georgia, serif" }}>
                   Skedaddle {data.name}
@@ -145,10 +147,10 @@ export default function PrintReport() {
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
               {[
-                { label: "Total Revenue", value: fmt$(data.total_revenue), sub: "Trailing 12 months" },
+                { label: `Total Revenue (${data.currency})`, value: fmt$(data.total_revenue, data.currency), sub: "Trailing 12 months" },
                 { label: "Total Jobs", value: `${data.total_jobs}`, sub: "Completed service calls" },
-                { label: "Top Species", value: data.species[0]?.species || "—", sub: data.species[0] ? fmt$(data.species[0].total_revenue) + " revenue" : "" },
-                { label: "Top Suburb", value: data.suburbs[0]?.suburb || "—", sub: data.suburbs[0] ? fmt$(data.suburbs[0].revenue) + " revenue" : "" },
+                { label: "Top Species", value: data.species[0]?.species || "—", sub: data.species[0] ? fmt$(data.species[0].total_revenue, data.currency) + " revenue" : "" },
+                { label: "Top Suburb", value: data.suburbs[0]?.suburb || "—", sub: data.suburbs[0] ? fmt$(data.suburbs[0].revenue, data.currency) + " revenue" : "" },
                 { label: "GSC Organic Clicks", value: fmtN(data.gsc.total_clicks), sub: "Total search clicks" },
                 { label: "GBP Phone Calls", value: fmtN(data.gbp.total_calls), sub: `from ${fmtN(data.gbp.total_searches)} searches` },
               ].map((k, i) => (
@@ -171,8 +173,8 @@ export default function PrintReport() {
                 <BarChart data={data.species} margin={{ top: 0, right: 0, left: 0, bottom: 50 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0dbd0" />
                   <XAxis dataKey="species" tick={{ fontSize: 10, fill: "#555" }} angle={-40} textAnchor="end" interval={0} />
-                  <YAxis tickFormatter={v => fmt$(v)} tick={{ fontSize: 10, fill: "#555" }} width={55} />
-                  <Tooltip content={<ChartTooltip formatter={fmt$} />} />
+                  <YAxis tickFormatter={v => fmt$(v, data.currency)} tick={{ fontSize: 10, fill: "#555" }} width={65} />
+                  <Tooltip content={<ChartTooltip formatter={(v: number) => fmt$(v, data.currency)} />} />
                   <Bar dataKey="total_revenue" name="Revenue" radius={[3, 3, 0, 0]}>
                     {data.species.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Bar>
@@ -194,7 +196,7 @@ export default function PrintReport() {
                           <span style={{ width: 8, height: 8, borderRadius: 2, background: CHART_COLORS[i % CHART_COLORS.length], display: "inline-block", flexShrink: 0 }} />
                           {s.species}
                         </td>
-                        <td style={{ padding: "7px 8px", textAlign: "right", fontWeight: 600 }}>{fmt$(s.total_revenue)}</td>
+                        <td style={{ padding: "7px 8px", textAlign: "right", fontWeight: 600 }}>{fmt$(s.total_revenue, data.currency)}</td>
                         <td style={{ padding: "7px 8px", textAlign: "right", color: "#666" }}>{s.total_jobs}</td>
                       </tr>
                     ))}
@@ -207,7 +209,7 @@ export default function PrintReport() {
           {/* ── Top Suburbs ── */}
           <div style={{ marginBottom: 36 }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: FOREST, marginBottom: 16, borderLeft: `3px solid ${GOLD}`, paddingLeft: 10 }}>
-              Revenue by Suburb — Top 20
+              Revenue by Suburb ({data.currency}) — Top 20
             </h2>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
               <thead>
@@ -229,9 +231,9 @@ export default function PrintReport() {
                         {i < 3 && <span style={{ color: GOLD, marginRight: 4 }}>★</span>}
                         {s.suburb}
                       </td>
-                      <td style={{ padding: "7px 10px", textAlign: "right", fontWeight: 600 }}>{fmt$(s.revenue)}</td>
+                      <td style={{ padding: "7px 10px", textAlign: "right", fontWeight: 600 }}>{fmt$(s.revenue, data.currency)}</td>
                       <td style={{ padding: "7px 10px", textAlign: "right", color: "#666" }}>{s.jobs}</td>
-                      <td style={{ padding: "7px 10px", textAlign: "right", color: "#666" }}>{avgJob > 0 ? fmt$(avgJob) : "—"}</td>
+                      <td style={{ padding: "7px 10px", textAlign: "right", color: "#666" }}>{avgJob > 0 ? fmt$(avgJob, data.currency) : "—"}</td>
                       <td style={{ padding: "7px 10px" }}>
                         <div style={{ background: MIST, borderRadius: 2, height: 6, width: "100%" }}>
                           <div style={{ background: CHART_COLORS[i % 3], borderRadius: 2, height: 6, width: `${pct}%` }} />
@@ -325,7 +327,7 @@ export default function PrintReport() {
 
           {/* ── Footer ── */}
           <div style={{ borderTop: `2px solid ${FOREST}`, paddingTop: 16, marginTop: 40, display: "flex", justifyContent: "space-between", fontSize: 10, color: "#999" }}>
-            <span>Unwired Web Solutions · unwiredwebsolutions.com · abello@unwiredwebsolutions.com</span>
+            <span>Skedaddle Franchise Portal · skedaddle.manus.space</span>
             <span>Skedaddle {data.name} · Strategy Report · {today}</span>
           </div>
 

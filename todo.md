@@ -175,3 +175,16 @@
 
 ## Insights Panel Enhancement (July 23)
 - [x] Make insights panel dynamically update to show territory-specific insights for the selected parent territory
+
+## Dave Loom Feedback Fixes (July 23)
+- [x] Fix Skedaddle branding: use actual Skedaddle logo + brand colors in portal header and reports
+- [x] Fix currency labels: clarify USD vs CAD on all revenue displays
+- [x] Fix top 15 markets ranking: stable, consistent, with currency flags (Network page)
+- [x] Add network close rate benchmark by species to analytics dashboard (Dashboard.tsx close rate table)
+- [x] Fix sessions display: focus on species-specific + suburb/city pages only (Analytics.tsx)
+- [ ] Fix page validation in reports: use GA4 data to confirm pages exist
+- [ ] Fix Ottawa missing from GA4 session rankings
+- [ ] Fix Denver (Colorado) missing from session rankings
+- [x] Flag GBP data as incomplete for multi-GBP territories (GBP disclaimer note added to Analytics.tsx)
+- [ ] Fix GBP post volume: 20-25 posts/month per sub-location for large territories
+- [ ] Add corporate vs franchise distinction to territory data

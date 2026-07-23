@@ -38,39 +38,17 @@ export default function Login() {
       <div className="w-full max-w-md px-6">
         {/* Logo / Brand mark */}
         <div className="text-center mb-10">
-          <div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-sm mb-5"
-            style={{ background: "oklch(0.32 0.09 145)", border: "2px solid oklch(0.55 0.12 145)" }}
-          >
-            {/* Stylised S mark */}
-            <svg viewBox="0 0 40 40" width="32" height="32" fill="none">
-              <path
-                d="M28 10C28 10 22 8 16 12C10 16 12 22 18 23C24 24 28 26 26 31C24 36 16 34 12 31"
-                stroke="oklch(0.85 0.08 80)"
-                strokeWidth="3"
-                strokeLinecap="round"
-                fill="none"
-              />
-            </svg>
-          </div>
-          <div
-            className="text-xs font-semibold tracking-widest uppercase mb-1"
-            style={{ color: "oklch(0.65 0.08 80)", fontFamily: "Inter, sans-serif" }}
-          >
-            Unwired Web Solutions
-          </div>
+          <img
+            src="/manus-storage/skedaddle_logo_white_305bb903.png"
+            alt="Skedaddle Humane Wildlife Control"
+            className="w-44 h-auto mx-auto mb-4"
+          />
           <h1
-            className="text-3xl font-bold"
-            style={{ color: "oklch(0.97 0.012 80)", fontFamily: "'Playfair Display', Georgia, serif" }}
+            className="text-lg font-semibold tracking-widest uppercase"
+            style={{ color: "oklch(0.65 0.08 80)", fontFamily: "Inter, sans-serif" }}
           >
             Franchise Portal
           </h1>
-          <p
-            className="text-sm mt-1"
-            style={{ color: "oklch(0.72 0.06 80)", fontFamily: "Inter, sans-serif" }}
-          >
-            Skedaddle Humane Wildlife Control
-          </p>
         </div>
 
         {/* Login card */}

@@ -10,6 +10,7 @@ import {
   LineChart, Line, Legend, PieChart, Pie, Cell
 } from "recharts";
 import { DASHBOARD_DATA } from "@/data/dashboardData";
+import { NETWORK_CLOSE_RATES, getNetworkBenchmark } from "@shared/closeRateData";
 import { ArrowLeft, TrendingUp, DollarSign, Users, Search, Phone, MousePointer, MapPin, AlertCircle } from "lucide-react";
 
 // ─── colour palette ───────────────────────────────────────────────────────────
@@ -22,10 +23,12 @@ const MIST     = "#e8ede9";
 const CHART_COLORS = [SAGE, GOLD, RUST, "#6b8f71", "#d4a843", "#8b4513", "#5a7a6a", "#c8a45a", "#9b6b4a", "#7a9e7e", "#e8b86d"];
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-const fmt$ = (n: number) =>
-  n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M`
-  : n >= 1_000   ? `$${(n / 1_000).toFixed(1)}K`
-  : `$${n.toFixed(0)}`;
+const fmt$ = (n: number, currency?: "CAD" | "USD") => {
+  const suffix = currency ? ` ${currency}` : "";
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M${suffix}`;
+  if (n >= 1_000)     return `$${(n / 1_000).toFixed(1)}K${suffix}`;
+  return `$${n.toFixed(0)}${suffix}`;
+};
 
 const fmtN = (n: number) =>
   n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : `${n}`;
@@ -140,10 +143,10 @@ export default function Dashboard() {
 
         {/* ── KPI Strip ── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 40 }}>
-          <KpiCard icon={DollarSign} label="Total Revenue" value={fmt$(data.total_revenue)} sub="Trailing 12 months" color={SAGE} />
+          <KpiCard icon={DollarSign} label={`Total Revenue (${data.currency})`} value={fmt$(data.total_revenue, data.currency)} sub="Trailing 12 months" color={SAGE} />
           <KpiCard icon={Users} label="Total Jobs" value={`${data.total_jobs}`} sub="Completed service calls" color={SAGE} />
-          <KpiCard icon={TrendingUp} label="Top Species" value={topSpecies?.species || "—"} sub={topSpecies ? fmt$(topSpecies.total_revenue) : ""} color={GOLD} />
-          <KpiCard icon={MapPin} label="Top Suburb" value={topSuburb?.suburb || "—"} sub={topSuburb ? fmt$(topSuburb.revenue) : ""} color={GOLD} />
+          <KpiCard icon={TrendingUp} label="Top Species" value={topSpecies?.species || "—"} sub={topSpecies ? fmt$(topSpecies.total_revenue, data.currency) : ""} color={GOLD} />
+          <KpiCard icon={MapPin} label="Top Suburb" value={topSuburb?.suburb || "—"} sub={topSuburb ? fmt$(topSuburb.revenue, data.currency) : ""} color={GOLD} />
           {hasGsc && <KpiCard icon={Search} label="GSC Clicks" value={fmtN(data.gsc.total_clicks)} sub={`${gscTrend >= 0 ? "+" : ""}${gscTrend} vs prev month`} color={RUST} />}
           <KpiCard icon={Phone} label="GBP Calls" value={fmtN(data.gbp.total_calls)} sub={`${fmtN(data.gbp.total_searches)} searches`} color={RUST} />
         </div>
@@ -153,13 +156,13 @@ export default function Dashboard() {
 
           {/* Species bar chart */}
           <div style={{ background: CREAM, borderRadius: 10, padding: 24, border: `1px solid ${MIST}` }}>
-            <SectionHeader title="Revenue by Species" subtitle="Trailing 12 months — sorted by total revenue" />
+            <SectionHeader title={`Revenue by Species (${data.currency})`} subtitle="Trailing 12 months — sorted by total revenue" />
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={data.species} margin={{ top: 0, right: 0, left: 0, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0dbd0" />
                 <XAxis dataKey="species" tick={{ fontSize: 11, fill: "#555" }} angle={-35} textAnchor="end" interval={0} />
-                <YAxis tickFormatter={v => fmt$(v)} tick={{ fontSize: 11, fill: "#555" }} width={60} />
-                <Tooltip content={<ChartTooltip formatter={fmt$} />} />
+                <YAxis tickFormatter={v => fmt$(v, data.currency)} tick={{ fontSize: 11, fill: "#555" }} width={70} />
+                <Tooltip content={<ChartTooltip formatter={(v: number) => fmt$(v, data.currency)} />} />
                 <Bar dataKey="total_revenue" name="Revenue" radius={[4, 4, 0, 0]}>
                   {data.species.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                 </Bar>
@@ -183,16 +186,84 @@ export default function Dashboard() {
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, fontSize: 12 }}>
                   <span style={{ width: 10, height: 10, borderRadius: 2, background: CHART_COLORS[i], flexShrink: 0 }} />
                   <span style={{ color: FOREST, flex: 1 }}>{d.name}</span>
-                  <span style={{ color: "#666", fontWeight: 600 }}>{fmt$(d.value)}</span>
+                  <span style={{ color: "#666", fontWeight: 600 }}>{fmt$(d.value, data.currency)}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
+        {/* ── Close Rate Benchmark ── */}
+        <div style={{ background: CREAM, borderRadius: 10, padding: 24, border: `1px solid ${MIST}`, marginBottom: 32 }}>
+          <SectionHeader
+            title="Close Rate by Species — Network Benchmark"
+            subtitle="Your species revenue vs. network-wide PA close rate. Source: Looker Studio Salesforce data (all territories)."
+          />
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${MIST}` }}>
+                  <th style={{ textAlign: "left", padding: "8px 12px", color: "#888", fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Species</th>
+                  <th style={{ textAlign: "right", padding: "8px 12px", color: "#888", fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Your Revenue</th>
+                  <th style={{ textAlign: "right", padding: "8px 12px", color: "#888", fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Your Jobs</th>
+                  <th style={{ textAlign: "right", padding: "8px 12px", color: "#888", fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Network Close Rate</th>
+                  <th style={{ textAlign: "left", padding: "8px 12px", color: "#888", fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>Close Rate Bar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.species.map((s, i) => {
+                  const benchmark = getNetworkBenchmark(s.species);
+                  return (
+                    <tr key={i} style={{ borderBottom: `1px solid ${MIST}`, background: i % 2 === 0 ? "transparent" : "#faf8f4" }}>
+                      <td style={{ padding: "10px 12px", color: FOREST, fontWeight: i < 3 ? 600 : 400 }}>
+                        {i < 3 && <span style={{ color: GOLD, marginRight: 6, fontSize: 11 }}>★</span>}
+                        {s.species}
+                      </td>
+                      <td style={{ padding: "10px 12px", textAlign: "right", color: FOREST, fontWeight: 600 }}>{fmt$(s.total_revenue, data.currency)}</td>
+                      <td style={{ padding: "10px 12px", textAlign: "right", color: "#666" }}>{s.total_jobs}</td>
+                      <td style={{ padding: "10px 12px", textAlign: "right" }}>
+                        {benchmark !== null ? (
+                          <span style={{
+                            fontWeight: 700,
+                            color: benchmark >= 55 ? SAGE : benchmark >= 45 ? GOLD : RUST,
+                          }}>
+                            {benchmark.toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span style={{ color: "#bbb", fontSize: 11 }}>No data</span>
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 12px", minWidth: 120 }}>
+                        {benchmark !== null ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ background: MIST, borderRadius: 3, height: 8, flex: 1 }}>
+                              <div style={{
+                                background: benchmark >= 55 ? SAGE : benchmark >= 45 ? GOLD : RUST,
+                                borderRadius: 3, height: 8,
+                                width: `${Math.min(benchmark, 100)}%`,
+                                transition: "width 0.5s ease"
+                              }} />
+                            </div>
+                          </div>
+                        ) : null}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ marginTop: 12, fontSize: 11, color: "#999", display: "flex", gap: 16 }}>
+            <span style={{ color: SAGE, fontWeight: 600 }}>■</span> ≥55% strong
+            <span style={{ color: GOLD, fontWeight: 600 }}>■</span> 45–54% average
+            <span style={{ color: RUST, fontWeight: 600 }}>■</span> &lt;45% opportunity
+            <span style={{ marginLeft: 8 }}>Network avg: ~52% | Source: Looker Studio Salesforce (all territories, trailing period)</span>
+          </div>
+        </div>
+
         {/* ── Row 2: Top Suburbs table ── */}
         <div style={{ background: CREAM, borderRadius: 10, padding: 24, border: `1px solid ${MIST}`, marginBottom: 32 }}>
-          <SectionHeader title="Revenue by Suburb" subtitle="Top 20 suburbs — sorted by total revenue" />
+            <SectionHeader title={`Revenue by Suburb (${data.currency})`} subtitle="Top 20 suburbs — sorted by total revenue" />
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
@@ -214,9 +285,9 @@ export default function Dashboard() {
                         {i < 3 && <span style={{ color: GOLD, marginRight: 6, fontSize: 11 }}>★</span>}
                         {s.suburb}
                       </td>
-                      <td style={{ padding: "10px 12px", textAlign: "right", color: FOREST, fontWeight: 600 }}>{fmt$(s.revenue)}</td>
+                      <td style={{ padding: "10px 12px", textAlign: "right", color: FOREST, fontWeight: 600 }}>{fmt$(s.revenue, data.currency)}</td>
                       <td style={{ padding: "10px 12px", textAlign: "right", color: "#666" }}>{s.jobs}</td>
-                      <td style={{ padding: "10px 12px", textAlign: "right", color: "#666" }}>{avgJob > 0 ? fmt$(avgJob) : "—"}</td>
+                      <td style={{ padding: "10px 12px", textAlign: "right", color: "#666" }}>{avgJob > 0 ? fmt$(avgJob, data.currency) : "—"}</td>
                       <td style={{ padding: "10px 12px" }}>
                         <div style={{ background: MIST, borderRadius: 3, height: 8, width: "100%" }}>
                           <div style={{ background: CHART_COLORS[i % 3], borderRadius: 3, height: 8, width: `${pct}%`, transition: "width 0.5s ease" }} />

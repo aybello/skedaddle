@@ -294,17 +294,17 @@ export default function Analytics() {
     if (!ga4Trend || !Array.isArray(ga4Trend)) return [];
 
     // Group by year-month, pivot page types into columns
+    // Focus on Species + Suburb pages only (exclude Total, Blog, Service to avoid inflation)
+    const INCLUDED_PAGE_TYPES = new Set(["species_pages", "suburb_pages"]);
     const grouped: Record<string, any> = {};
     for (const row of ga4Trend as any[]) {
+      if (!INCLUDED_PAGE_TYPES.has(row.pageType)) continue;
       const key = `${row.year}-${String(row.month).padStart(2, "0")}`;
       if (!grouped[key]) {
         grouped[key] = { name: `${MONTHS[row.month - 1]} '${String(row.year).slice(2)}`, year: row.year, month: row.month };
       }
-      const pt = row.pageType === "total" ? "Total" :
-        row.pageType === "species_pages" ? "Species" :
-        row.pageType === "blog_pages" ? "Blog" :
-        row.pageType === "service_pages" ? "Service" :
-        row.pageType === "location_page" ? "Location" : row.pageType;
+      const pt = row.pageType === "species_pages" ? "Species Pages" :
+        row.pageType === "suburb_pages" ? "Suburb Pages" : row.pageType;
       grouped[key][pt] = (grouped[key][pt] || 0) + Number(row.sessions);
     }
 
@@ -358,8 +358,14 @@ export default function Analytics() {
     const currentDirections = getCurrent(yoyData.gbp.current, "directions");
     const prevDirections = getPrev(yoyData.gbp.previous, "directions");
 
-    const currentSessions = getCurrent(yoyData.ga4.current, "total");
-    const prevSessions = getPrev(yoyData.ga4.previous, "total");
+    // Sum species + suburb page sessions (not total, to match chart focus)
+    const getSum = (arr: any[], keys: string[]) =>
+      keys.reduce((sum, k) => {
+        const found = arr.find((r: any) => r.pageType === k);
+        return sum + (found ? Number(found.sessions || 0) : 0);
+      }, 0);
+    const currentSessions = getSum(yoyData.ga4.current, ["species_pages", "suburb_pages"]);
+    const prevSessions = getSum(yoyData.ga4.previous, ["species_pages", "suburb_pages"]);
 
     return {
       calls: { current: currentCalls, previous: prevCalls, delta: formatDelta(currentCalls, prevCalls) },
@@ -485,7 +491,7 @@ export default function Analytics() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
             <KpiCard
               icon={Activity}
-              label="Total Sessions"
+              label="Species + Suburb Sessions"
               value={yoyKPIs?.sessions.current.toLocaleString() || "—"}
               delta={yoyKPIs?.sessions.delta}
               color={SAGE}
@@ -519,10 +525,10 @@ export default function Analytics() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
             <div>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: FOREST, marginBottom: 4, fontFamily: "'Playfair Display', serif" }}>
-                Website Sessions
+                Species & Suburb Page Sessions
               </h2>
               <p style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
-                GA4 sessions by page type — {selectedTerritoryName} ({selectedYear - 1}–{selectedYear})
+                GA4 sessions for species and suburb pages — {selectedTerritoryName} ({selectedYear - 1}–{selectedYear})
               </p>
             </div>
             <button
@@ -552,10 +558,8 @@ export default function Analytics() {
                 <YAxis tick={{ fontSize: 10, fill: "#888" }} />
                 <Tooltip content={<EnhancedTooltip chartType="ga4" />} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Area type="monotone" dataKey="Total" stroke={SAGE} fill={SAGE + "30"} strokeWidth={2} name="Total Sessions" />
-                <Area type="monotone" dataKey="Species" stroke={GOLD} fill={GOLD + "20"} strokeWidth={1.5} name="Species Pages" />
-                <Area type="monotone" dataKey="Blog" stroke="#b85c38" fill="#b85c3820" strokeWidth={1.5} name="Blog Pages" />
-                <Area type="monotone" dataKey="Location" stroke="#6b8f71" fill="#6b8f7120" strokeWidth={1.5} name="Location Pages" />
+                <Area type="monotone" dataKey="Species Pages" stroke={SAGE} fill={SAGE + "30"} strokeWidth={2} name="Species Pages" />
+                <Area type="monotone" dataKey="Suburb Pages" stroke={GOLD} fill={GOLD + "20"} strokeWidth={1.5} name="Suburb Pages" />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -605,6 +609,10 @@ export default function Analytics() {
               </BarChart>
             </ResponsiveContainer>
           )}
+          <div style={{ marginTop: 12, padding: "10px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6, fontSize: 11, color: "#92400e", display: "flex", alignItems: "flex-start", gap: 8 }}>
+            <span style={{ fontWeight: 700, flexShrink: 0 }}>⚠ Note:</span>
+            <span>GBP data is available for select territories only. Territories without a connected Google Business Profile listing will show no data. Coverage: Hamilton, Kitchener/Waterloo, Durham, Ottawa, Belleville, Peterborough, London, Windsor, Montreal, Milwaukee, Minneapolis.</span>
+          </div>
         </div>
 
         {/* ─── YoY Comparison Table ────────────────────────────────────────────── */}
