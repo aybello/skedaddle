@@ -247,7 +247,7 @@ export default function LocationDetail() {
                 style={{ color: "oklch(0.65 0.010 80)", fontFamily: "Inter, sans-serif" }}
               >
                 A full strategy dashboard will be generated once Salesforce data is received.
-                Contact <a href="mailto:abello@unwiredwebsolutions.com" style={{ color: "oklch(0.32 0.09 145)" }}>abello@unwiredwebsolutions.com</a> to request data collection.
+                Contact <a href="mailto:dave@skedaddlewildlife.com" style={{ color: "oklch(0.32 0.09 145)" }}>dave@skedaddlewildlife.com</a> to request data collection.
               </div>
             </div>
           )}

@@ -162,14 +162,14 @@ export default function Login() {
           className="text-center text-xs mt-6"
           style={{ color: "oklch(0.55 0.06 80)", fontFamily: "Inter, sans-serif" }}
         >
-          Access is restricted to authorised franchise owners and UWS staff.
+          Access is restricted to authorised franchise owners and Skedaddle staff.
           <br />
           Contact{" "}
           <a
-            href="mailto:abello@unwiredwebsolutions.com"
+            href="mailto:dave@skedaddlewildlife.com"
             style={{ color: "oklch(0.72 0.08 80)" }}
           >
-            abello@unwiredwebsolutions.com
+            dave@skedaddlewildlife.com
           </a>{" "}
           for access.
         </p>

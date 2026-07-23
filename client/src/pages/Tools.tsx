@@ -58,7 +58,7 @@ const TOOLS: Tool[] = [
     icon: <ClipboardList size={20} />,
     status: "available",
     filename: "gbp_audit_checklist.md",
-    usage: "Complete quarterly. Score each section and identify the top 3 priority actions. Share with UWS for implementation support.",
+    usage: "Complete quarterly. Score each section and identify the top 3 priority actions. Share with your digital strategy team for implementation support.",
   },
 ];
 
@@ -89,7 +89,7 @@ export default function Tools() {
             className="text-sm"
             style={{ color: "oklch(0.52 0.016 80)", fontFamily: "Inter, sans-serif" }}
           >
-            5 operational tools built by Unwired Web Solutions for Skedaddle franchise owners.
+            5 operational tools built for Skedaddle franchise owners.
             All tools are Python scripts or Markdown templates — no external dependencies required.
           </div>
           <div className="mt-3" style={{ borderTop: "2px solid oklch(0.32 0.09 145)", width: "48px" }} />
@@ -209,7 +209,7 @@ export default function Tools() {
             fontFamily: "Inter, sans-serif",
           }}
         >
-          <strong style={{ color: "oklch(0.32 0.09 145)" }}>Download all tools:</strong> The complete tool package is available in the UWS Work Google Drive folder as <code style={{ fontFamily: "monospace" }}>SkedaddleOperationalTools_v1.zip</code>. Contact <a href="mailto:abello@unwiredwebsolutions.com" style={{ color: "oklch(0.32 0.09 145)" }}>abello@unwiredwebsolutions.com</a> for access.
+          <strong style={{ color: "oklch(0.32 0.09 145)" }}>Download all tools:</strong> The complete tool package is available in the Skedaddle shared Google Drive folder as <code style={{ fontFamily: "monospace" }}>SkedaddleOperationalTools_v1.zip</code>. Contact <a href="mailto:dave@skedaddlewildlife.com" style={{ color: "oklch(0.32 0.09 145)" }}>dave@skedaddlewildlife.com</a> for access.
         </div>
       </div>
     </PortalLayout>
