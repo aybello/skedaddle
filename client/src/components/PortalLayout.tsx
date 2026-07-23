@@ -59,10 +59,9 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         style={{ borderColor: "oklch(0.28 0.09 145)", background: "oklch(0.18 0.07 145)" }}
       >
         <img
-          src="/manus-storage/skedaddle_logo_234048c2.png"
+          src="/manus-storage/skedaddle_logo_white_rgba_ef9c6122.png"
           alt="Skedaddle Humane Wildlife Control"
           className="w-32 h-auto mb-2"
-          style={{ filter: "brightness(0) invert(1)" }}
         />
         <div
           className="text-xs font-semibold tracking-widest uppercase"
