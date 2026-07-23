@@ -10,6 +10,7 @@ import {
   FileText,
   ImageIcon,
   LayoutDashboard,
+  LineChart,
   LogOut,
   MapPin,
   Menu,
@@ -30,6 +31,7 @@ const TOP_NAV: NavItem[] = [
   { label: "Network Map", href: "/network", icon: <MapPin size={16} /> },
   { label: "Tools", href: "/tools", icon: <BarChart3 size={16} /> },
   { label: "GBP Images", href: "/gbp-images", icon: <ImageIcon size={16} /> },
+  { label: "Analytics", href: "/analytics", icon: <LineChart size={16} /> },
   { label: "Resources", href: "/resources", icon: <BookOpen size={16} />, adminOnly: true },
 ];
 

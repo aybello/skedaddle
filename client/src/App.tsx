@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Resources from "./pages/Resources";
 import Tools from "./pages/Tools";
 import GbpImageGenerator from "./pages/GbpImageGenerator";
+import Analytics from "./pages/Analytics";
 import { Redirect, Route, Switch } from "wouter";
 
 // Protected route — redirects to /login if not authenticated
@@ -63,6 +64,9 @@ function Router() {
       </Route>
       <Route path="/gbp-images">
         <ProtectedRoute component={GbpImageGenerator} />
+      </Route>
+      <Route path="/analytics">
+        <ProtectedRoute component={Analytics} />
       </Route>
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

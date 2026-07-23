@@ -25,4 +25,37 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+// ─── Analytics Tables ─────────────────────────────────────────────────────────
+
+/**
+ * GA4 session data by territory, page type, year, and month.
+ * Sourced from the "Page Breakdown Skedaddle" spreadsheet tab.
+ */
+export const ga4Sessions = mysqlTable("ga4_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  territory: varchar("territory", { length: 128 }).notNull(),
+  pageType: varchar("pageType", { length: 64 }).notNull(), // 'total', 'species_pages', 'blog_pages', 'service_pages', 'location_page'
+  year: int("year").notNull(),
+  month: int("month").notNull(), // 1-12
+  sessions: int("sessions").notNull().default(0),
+});
+
+export type GA4Session = typeof ga4Sessions.$inferSelect;
+export type InsertGA4Session = typeof ga4Sessions.$inferInsert;
+
+/**
+ * GBP metrics by territory, metric type, year, and month.
+ * Sourced from the "GBP Data" spreadsheet tab.
+ */
+export const gbpMetrics = mysqlTable("gbp_metrics", {
+  id: int("id").autoincrement().primaryKey(),
+  territory: varchar("territory", { length: 128 }).notNull(),
+  metricType: varchar("metricType", { length: 32 }).notNull(), // 'calls', 'bookings', 'directions', 'website_clicks'
+  year: int("year").notNull(),
+  month: int("month").notNull(), // 1-12
+  value: int("value").notNull().default(0),
+  businessUrl: text("businessUrl"), // GBP listing URL
+});
+
+export type GBPMetric = typeof gbpMetrics.$inferSelect;
+export type InsertGBPMetric = typeof gbpMetrics.$inferInsert;

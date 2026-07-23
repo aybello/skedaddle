@@ -145,3 +145,19 @@
 - Dave willing to spend $3K tokens per client in first month
 - DashThis costs $500/month — dashboard will replace it
 - Dave wants platform sellable to other franchises in 7-10 months
+
+## DashThis Replacement — Analytics Dashboard (July 23)
+- [x] Database schema for GA4 sessions data (territory, page_type, year, month, sessions)
+- [x] Database schema for GBP metrics (territory, metric_type, year, month, value, business_url)
+- [x] Ingest page_breakdown.csv into GA4 sessions table
+- [x] Ingest gbp_data.csv into GBP metrics table
+- [x] tRPC procedures: getAnalyticsTerritories, getGA4Sessions, getGBPMetrics
+- [x] tRPC procedures: getYoYComparison (sessions + GBP)
+- [x] Analytics dashboard page with territory switcher dropdown
+- [x] Month/year filter controls
+- [x] KPI cards (total sessions, calls, website clicks, directions — with YoY delta)
+- [x] GA4 sessions line chart (monthly trend by page type)
+- [x] GBP metrics bar chart (calls, clicks, directions monthly)
+- [x] YoY comparison view (this month vs same month last year)
+- [x] Route /analytics wired in App.tsx + sidebar nav
+- [x] Vitest tests for analytics procedures
