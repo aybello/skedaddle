@@ -141,8 +141,10 @@ function EnhancedTooltip({ active, payload, label, chartType }: any) {
   );
 }
 
-// ─── Insights Panel ─────────────────────────────────────────────────────────
+// ─── Insights Panel (Collapsible) ───────────────────────────────────────────
 function InsightsPanel({ insights, isLoading }: { insights: any[] | undefined; isLoading: boolean }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   if (isLoading) {
     return (
       <div style={{ background: "#fff", borderRadius: 10, border: `1px solid ${MIST}`, padding: "20px 24px", marginBottom: 24 }}>
@@ -165,49 +167,72 @@ function InsightsPanel({ insights, isLoading }: { insights: any[] | undefined; i
     );
   }
 
+  const warningCount = insights.filter(i => i.type === "warning").length;
+  const growthCount = insights.filter(i => i.type === "success").length;
+
   return (
     <div style={{ background: "#fff", borderRadius: 10, border: `1px solid ${MIST}`, padding: "20px 24px", marginBottom: 24 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          display: "flex", alignItems: "center", gap: 8, width: "100%",
+          background: "none", border: "none", cursor: "pointer", padding: 0,
+        }}
+      >
         <Lightbulb size={16} color={GOLD} />
         <span style={{ fontSize: 13, fontWeight: 700, color: FOREST, fontFamily: "Inter, sans-serif" }}>
-          Automated Insights
+          Network Insights
         </span>
         <span style={{ fontSize: 11, color: "#888", marginLeft: 4 }}>
-          ({insights.length} anomal{insights.length === 1 ? "y" : "ies"} detected)
+          {warningCount > 0 && <span style={{ color: "#dc2626", fontWeight: 600 }}>{warningCount} warning{warningCount !== 1 ? "s" : ""}</span>}
+          {warningCount > 0 && growthCount > 0 && " · "}
+          {growthCount > 0 && <span style={{ color: "#16a34a", fontWeight: 600 }}>{growthCount} growth signal{growthCount !== 1 ? "s" : ""}</span>}
         </span>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {insights.map((insight, i) => (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 10,
-              padding: "10px 14px",
-              borderRadius: 8,
-              background: insight.type === "warning" ? "#fef2f2" : insight.type === "success" ? "#f0fdf4" : "#f8fafc",
-              border: `1px solid ${insight.type === "warning" ? "#fecaca" : insight.type === "success" ? "#bbf7d0" : "#e2e8f0"}`,
-            }}
-          >
-            {insight.type === "warning" ? (
-              <AlertTriangle size={15} color="#dc2626" style={{ marginTop: 1, flexShrink: 0 }} />
-            ) : insight.type === "success" ? (
-              <TrendingUp size={15} color="#16a34a" style={{ marginTop: 1, flexShrink: 0 }} />
-            ) : (
-              <Info size={15} color="#64748b" style={{ marginTop: 1, flexShrink: 0 }} />
-            )}
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: insight.type === "warning" ? "#991b1b" : insight.type === "success" ? "#166534" : "#334155" }}>
-                {insight.message}
-              </div>
-              <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
-                {insight.metric === "sessions" ? "GA4 Sessions" : "GBP Metric"} · {Math.abs(insight.changePercent).toFixed(0)}% {insight.changePercent > 0 ? "increase" : "decrease"} YoY
+        <ChevronDown
+          size={14}
+          color="#888"
+          style={{
+            marginLeft: "auto",
+            transition: "transform 0.2s cubic-bezier(0.23, 1, 0.32, 1)",
+            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
+      </button>
+
+      {isOpen && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${MIST}` }}>
+          {insights.map((insight, i) => (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 10,
+                padding: "10px 14px",
+                borderRadius: 8,
+                background: insight.type === "warning" ? "#fef2f2" : insight.type === "success" ? "#f0fdf4" : "#f8fafc",
+                border: `1px solid ${insight.type === "warning" ? "#fecaca" : insight.type === "success" ? "#bbf7d0" : "#e2e8f0"}`,
+              }}
+            >
+              {insight.type === "warning" ? (
+                <AlertTriangle size={15} color="#dc2626" style={{ marginTop: 1, flexShrink: 0 }} />
+              ) : insight.type === "success" ? (
+                <TrendingUp size={15} color="#16a34a" style={{ marginTop: 1, flexShrink: 0 }} />
+              ) : (
+                <Info size={15} color="#64748b" style={{ marginTop: 1, flexShrink: 0 }} />
+              )}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: insight.type === "warning" ? "#991b1b" : insight.type === "success" ? "#166534" : "#334155" }}>
+                  {insight.message}
+                </div>
+                <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
+                  {insight.metric === "sessions" ? "GA4 Sessions" : "GBP Metric"} · {Math.abs(insight.changePercent).toFixed(0)}% {insight.changePercent > 0 ? "increase" : "decrease"} YoY
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -464,9 +489,6 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* ─── Automated Insights Panel ────────────────────────────────────────── */}
-        <InsightsPanel insights={insights} isLoading={insightsLoading} />
-
         {/* ─── YoY KPI Cards ───────────────────────────────────────────────────── */}
         <div style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: FOREST, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
@@ -651,6 +673,9 @@ export default function Analytics() {
             </table>
           </div>
         )}
+
+        {/* ─── Automated Insights Panel (Collapsible, below charts) ──────────── */}
+        <InsightsPanel insights={insights} isLoading={insightsLoading} />
 
         {/* ─── Data Source Note ─────────────────────────────────────────────────── */}
         <div style={{ padding: "14px 18px", background: CREAM, borderRadius: 8, border: `1px solid ${MIST}`, fontSize: 12, color: "#666" }}>
