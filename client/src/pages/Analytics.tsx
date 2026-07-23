@@ -1,5 +1,5 @@
 /**
- * Analytics.tsx — DashThis Replacement
+ * Analytics.tsx — Analytics Dashboard
  * Full analytics dashboard with GA4 sessions + GBP metrics,
  * territory switching, month/year filters, YoY comparisons,
  * automated insights panel, CSV export, and detailed tooltips.
@@ -425,7 +425,7 @@ export default function Analytics() {
             Analytics Dashboard
           </h1>
           <p style={{ fontSize: 13, color: "#666", marginTop: 6 }}>
-            GA4 sessions and Google Business Profile metrics — replaces DashThis reporting.
+            GA4 sessions and Google Business Profile metrics across all territories.
           </p>
           <div style={{ marginTop: 10, borderTop: `2px solid ${SKEDADDLE_GREEN}`, width: 48 }} />
         </div>
