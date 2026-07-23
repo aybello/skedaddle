@@ -210,6 +210,17 @@ export default function LocationDetail() {
                       <FileText size={12} /> Full Report
                     </a>
                   )}
+                  {loc.combinedReportUrl && (
+                    <a
+                      href={loc.combinedReportUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs flex items-center gap-1 font-semibold transition-opacity hover:opacity-70"
+                      style={{ color: "oklch(0.32 0.09 145)", fontFamily: "Inter, sans-serif", textDecoration: "none" }}
+                    >
+                      <FileText size={12} /> Combined WI Report
+                    </a>
+                  )}
                   {(loc.triggerReportUrl || loc.triggerPdfUrl) && (
                     <a
                       href={loc.triggerReportUrl || loc.triggerPdfUrl}
